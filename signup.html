@@ -1,63 +1,68 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-<title>ActLocal Sign Up</title>
-<link rel="stylesheet" href="style.css">
+    <title>ActLocal Sign Up</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body class="center">
 
-<div class="logo">
-    <span class="act-logo">Act</span>
-    <span class="local-logo">Local</span>
-</div>
+    <div class="logo">
+        <span class="act-logo">Act</span>
+        <span class="local-logo">Local</span>
+    </div>
 
-<p class="quote">"Turn concern into community action."</p>
+    <p class="quote">"Turn concern into community action."</p>
 
-<div class="card">
+    <div class="card">
 
-    <h2>Create Account</h2>
+        <h2>Create Account</h2>
 
-    <form onsubmit="signup(event)">
+        <form onsubmit="signup(event)">
 
-    <label for="email">Email</label>
-    <input 
-    type="email" 
-    id="signupEmail" 
-    placeholder="your@email.com"
-    required>
+            <label for="email">Email</label>
+            <input
+                type="email"
+                id="signupEmail"
+                placeholder="your@email.com"
+                required
+            >
 
-    <label for="password">Password</label>
-    <input 
-    type="password" 
-    id="signupPassword" 
-    placeholder="Password"
-    required
-    minlength="6">
+            <label for="password">Password</label>
+            <input
+                type="password"
+                id="signupPassword"
+                placeholder="Password"
+                required
+                minlength="6"
+            >
 
-    <label for="confirm">Confirm Password</label>
-    <input 
-    type="password" 
-    id="confirmPassword" 
-    placeholder="Confirm Password"
-    required>
+            <label for="confirm">Confirm Password</label>
+            <input
+                type="password"
+                id="confirmPassword"
+                placeholder="Confirm Password"
+                required
+            >
 
-    <p id="error-message" class="error"></p>
+            <p id="error-message" class="error"></p>
 
-    <button type="submit">Sign Up</button>
+            <button type="submit">Sign Up</button>
 
-    </form>
+        </form>
 
-    <p class="signup-text">Already have an account?</p>
-    <a href="index.html" class="signup-link">Log In</a>
+        <p class="signup-text">Already have an account?</p>
+        <a href="index.html" class="signup-link">Log In</a>
 
-</div>
+    </div>
 
-<p class="footer-text">
-ActLocal empowers communities to identify, report, and address local environmental and infrastructure issues.
-</p>
+    <p class="footer-text">
+        ActLocal empowers communities to identify, report, and address local environmental and infrastructure issues.
+    </p>
 
-<script src="script.js"></script>
+    <script src="script.js"></script>
 
 </body>
+
 </html>

@@ -1,52 +1,310 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-<title>ActLocal Home</title>
-<link rel="stylesheet" href="style.css">
-<script src="https://unpkg.com/lucide@latest"></script>
+    <title>ActLocal Home</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body>
 
+    <!-- Navbar -->
+    <div class="navbar">
 
+        <div class="logo home-logo">
+            <span class="act-logo">Act</span>
+            <span class="local-logo">Local</span>
+        </div>
 
-<!-- Navbar -->
-<div class="navbar">
+        <div class="nav-actions">
 
-    <div class="logo home-logo">
-        <span class="act-logo">Act</span>
-        <span class="local-logo">Local</span>
+            <span class="nav-item post-item" onclick="openPost()">
+                <span class="plus">+</span>
+                <span class="post-text">Post</span>
+            </span>
+
+            <span class="nav-item" onclick="openProfile()">
+                <i data-lucide="user"></i>
+            </span>
+
+            <span class="nav-item">
+                <i data-lucide="log-out"></i>
+            </span>
+
+        </div>
+
     </div>
 
-    <div class="nav-actions">
+    <!-- Feed -->
+    <div class="feed" id="feed">
+        <p class="empty-feed">No posts yet.</p>
+    </div>
 
-        <span class="nav-item post-item">
-            <span class="plus">+</span>
-            <span class="post-text">Post</span>
-        </span>
 
-        <span class="nav-item">
-            <i data-lucide="user"></i>
-        </span>
+    <!-- PROFILE MODAL -->
+    <div class="profile-modal" id="profileModal">
 
-        <span class="nav-item">
-            <i data-lucide="log-out"></i>
-        </span>
+        <div class="profile-content">
+
+            <div class="profile-header">
+                <h2>My Profile</h2>
+                <span class="close-btn" onclick="closeProfile()">✕</span>
+            </div>
+
+            <form class="profile-info" onsubmit="saveProfile(event)">
+
+                <div class="profile-avatar-container">
+
+                    <div class="profile-avatar">
+
+                        <img id="profileImage">
+                        <span id="profileAvatar"></span>
+
+                        <div class="avatar-overlay">
+                            <span>Update Profile Picture</span>
+                            <i data-lucide="camera"></i>
+                        </div>
+
+                        <input type="file" id="imageUpload" accept="image/*">
+
+                    </div>
+
+                </div>
+
+                <label>Full Name</label>
+                <input id="profileName" type="text" required>
+
+                <label>Email</label>
+                <input id="profileEmail" type="email" required>
+
+                <label>Bio</label>
+                <textarea id="profileBio" placeholder="Write something..."></textarea>
+
+                <button id="saveBtn" class="save-btn">
+                    <span>Save Profile</span>
+                </button>
+
+            </form>
+
+            <hr>
+
+            <h4 class="activity-title">Activity</h4>
+
+            <div class="activity">
+
+                <div class="activity-box">
+                    <strong id="postCount">0</strong>
+                    <span>Posts</span>
+                </div>
+
+                <div class="activity-box">
+                    <strong>₱45,000</strong>
+                    <span>Donated</span>
+                </div>
+
+                <div class="activity-box">
+                    <strong>156</strong>
+                    <span>Followers</span>
+                </div>
+
+            </div>
+
+            <hr>
+
+            <div class="profile-actions">
+
+                <button class="settings-btn" onclick="openSettings()">
+                    <i data-lucide="settings"></i>
+                    <span>Settings</span>
+                </button>
+
+                <button class="logout-btn">
+                    <i data-lucide="log-out"></i>
+                    <span>Logout</span>
+                </button>
+
+            </div>
+
+        </div>
 
     </div>
 
-</div>
+    <!-- SETTINGS MODAL -->
+    <div class="profile-modal" id="settingsModal">
+
+        <div class="profile-content">
+
+            <div class="profile-header">
+                <h2>Settings</h2>
+                <span class="close-btn" onclick="closeSettings()">✕</span>
+            </div>
+
+            <form class="profile-info" onsubmit="saveSettings(event)">
+
+                <h4 class="settings-section">Appearance</h4>
+
+                <label>Theme</label>
+                <select id="themeSelect">
+                    <option value="light">Light Mode</option>
+                    <option value="dark">Dark Mode</option>
+                </select>
+
+                <hr>
+
+                <h4 class="settings-section">Contact Information</h4>
+
+                <h4 class="settings-section">Address</h4>
+
+                <label>House No.</label>
+                <input type="number" id="houseNumber" placeholder="House No." required>
+
+                <label>Street</label>
+                <input type="text" id="streetName" placeholder="Street Name" required>
+
+                <label>City</label>
+                <input type="text" id="cityName" placeholder="City" required>
+
+                <label>Province</label>
+                <input type="text" id="provinceName" placeholder="Province" required>
+
+                <div class="otp-container">
+
+                    <label>Cellphone Number</label>
+
+                    <div class="phone-row">
+                        <input type="tel" id="userPhone" placeholder="09123456789" maxlength="11" required>
+
+                        <button type="button" onclick="generateOTP()" class="verify-btn">
+                            Verify Number
+                        </button>
+                    </div>
+
+                    <div class="otp-section" id="otpSection" style="display:none;">
+
+                        <label>Enter OTP</label>
+
+                        <div class="otp-boxes">
+                            <input class="otp-input" maxlength="1">
+                            <input class="otp-input" maxlength="1">
+                            <input class="otp-input" maxlength="1">
+                            <input class="otp-input" maxlength="1">
+                            <input class="otp-input" maxlength="1">
+                            <input class="otp-input" maxlength="1">
+                        </div>
+
+                        <p class="otp-timer" id="otpTimer"></p>
+
+                        <div class="otp-actions">
+
+                            <button type="button" onclick="verifyOTP()" class="verify-otp">
+                                <i data-lucide="check-circle"></i>
+                                Verify OTP
+                            </button>
+
+                            <button type="button" onclick="generateOTP()" class="resend-otp">
+                                <i data-lucide="refresh-ccw"></i>
+                                Resend OTP
+                            </button>
+
+                        </div>
+
+                        <p id="phoneVerifiedBadge" class="verified-badge" style="display:none;">
+                            ✓ Phone Verified
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <button id="settingsSaveBtn" class="save-btn savesettings-btn">
+                    <span>Save Settings</span>
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <!-- CREATE POST MODAL -->
+    <div class="profile-modal" id="postModal">
+
+        <div class="post-content">
+
+            <div class="post-header">
+                <h2>Create a Post</h2>
+            </div>
+
+            <form onsubmit="createPost(event)">
+
+                <label>Title</label>
+                <input type="text" id="postTitle" placeholder="Title of the issue..." required>
+
+                <label>Category</label>
+
+                <div class="custom-select">
+
+<div class="select-btn" onclick="toggleCategory()">
+<span id="selectedCategory">Select Category</span>
+<span class="arrow">▾</span>
 </div>
 
-<!-- Feed -->
+<div class="select-options" id="categoryOptions">
 
-<div class="feed" id="feed">
-    <p class="empty-feed">No posts yet.</p>
+<div onclick="selectCategory('Water Pollution')">Water Pollution</div>
+<div onclick="selectCategory('Air Pollution')">Air Pollution</div>
+<div onclick="selectCategory('Waste Management')">Waste Management</div>
+<div onclick="selectCategory('Infrastructure')">Infrastructure</div>
+<div onclick="selectCategory('Coastal Degradation')">Coastal Degradation</div>
+<div onclick="selectCategory('Climate Resilience')">Climate Resilience</div>
+<div onclick="selectCategory('Other')">Other</div>
+
 </div>
 
-<script>
-lucide.createIcons();
-</script>
+<input type="text" id="postCategory" name="postCategory" required class="category-validator">
+
+</div>
+
+                <label>Description</label>
+                <textarea id="postDescription" placeholder="Describe the issue in detail..." required></textarea>
+
+                <label>Upload Image</label>
+
+                <div id="uploadBox" class="upload-box">
+
+                    <input type="file" id="postImage" accept="image/*" hidden>
+
+                    <img id="imagePreview">
+
+                    <button type="button" id="removeImageBtn" onclick="removeImage(event)">✕</button>
+
+                    <div id="uploadText">
+                        <i data-lucide="image"></i>
+                        <p>Click to upload an image</p>
+                    </div>
+
+                </div>
+
+                <div class="post-buttons">
+
+                    <button type="button" class="cancel-post" onclick="closePost()">Cancel</button>
+
+                    <button class="submit-post">Post</button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+
+    <script>
+        lucide.createIcons();
+    </script>
 
 </body>
 </html>
