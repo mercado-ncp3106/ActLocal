@@ -2,6 +2,7 @@ let generatedOTP = "";
 let phoneVerified = false;
 let otpTimer;
 let otpSeconds = 60;
+let currentPostIndex = null;
 //=====================================================
 // LOGIN
 function login(event){
@@ -218,6 +219,16 @@ btn.textContent = "Save Settings";
 window.onload = function(){
 
 renderPosts();
+
+let modalInput = document.getElementById("modalCommentInput");
+
+if(modalInput){
+modalInput.addEventListener("keypress", function(e){
+if(e.key === "Enter"){
+addComment(currentPostIndex,this);
+}
+});
+}
 
 /* PROFILE IMAGE */
 let savedImage = localStorage.getItem("profileImage");
@@ -543,6 +554,7 @@ category,
 description,
 image,
 likes:0,
+liked:false,
 comments:[],
 donations:0,
 time: Date.now()
@@ -586,10 +598,10 @@ let feed = document.getElementById("feed");
 
 let posts = JSON.parse(localStorage.getItem("posts")) || [];
 
-
 /* update post counter */
-if(document.getElementById("postCount")){
-document.getElementById("postCount").textContent = posts.length;
+let postCount = document.getElementById("postCount");
+if(postCount){
+postCount.textContent = posts.length;
 }
 
 feed.innerHTML="";
@@ -633,18 +645,53 @@ ${imageHTML}
 <div class="post-stats">
 
 <span>${post.likes} likes</span>
-<span>${post.comments.length} comments</span>
+<span class="comment-count" onclick="openCommentModal(${index})">
+${post.comments.length} comments
+</span>
 <span class="donate-total">₱${post.donations}</span>
 
 </div>
 
 <div class="post-actions">
 
-<button onclick="likePost(${index})">❤ Like</button>
+<button onclick="likePost(${index})" class="like-btn ${post.liked ? 'liked' : ''}">
+<i data-lucide="heart"></i>
+<span>Like</span>
+</button>
 
-<button onclick="commentPost(${index})">💬 Comment</button>
+<button onclick="toggleComments(${index})">
+<i data-lucide="message-circle"></i> Comment
+</button>
 
-<button onclick="donatePost(${index})" class="donate-btn">₱ Donate</button>
+<button onclick="donatePost(${index})" class="donate-btn">
+<i data-lucide="banknote"></i> Donate
+</button>
+
+<button onclick="deletePost(${index})" class="delete-btn">
+<i data-lucide="trash-2"></i> Delete
+</button>
+
+</div>
+
+<div class="comment-section" id="comments-${index}" style="display:none;">
+
+<div class="comment-list">
+${post.comments.map(c => `<div class="comment-item">${typeof c === "string" ? c : c.text}</div>`).join("")}
+</div>
+
+<div class="comment-input-box">
+
+<input 
+type="text" 
+placeholder="Write a comment..." 
+onkeypress="if(event.key==='Enter'){addComment(${index}, this)}"
+/>
+
+<button onclick="addComment(${index}, this.previousElementSibling)">
+<i data-lucide="send"></i>
+</button>
+
+</div>
 
 </div>
 
@@ -655,13 +702,199 @@ feed.insertAdjacentHTML("beforeend",postHTML);
 
 });
 
+lucide.createIcons();
+}
+
+function toggleComments(index){
+
+let section = document.getElementById("comments-"+index);
+
+if(section.style.display === "none"){
+section.style.display = "block";
+}else{
+section.style.display = "none";
+}
+
+}
+
+function openCommentModal(index){
+
+currentPostIndex = index;
+
+let posts = JSON.parse(localStorage.getItem("posts")) || [];
+
+let post = posts[index];
+
+/* modal title */
+document.getElementById("modalPostTitle").textContent = post.name + "'s Post";
+
+/* post avatar */
+let profile = post.profileImage
+? `<img src="${post.profileImage}" class="modal-avatar">`
+: `<div class="modal-avatar">${post.name.charAt(0)}</div>`;
+
+/* post image */
+let imageHTML = post.image
+? `<img src="${post.image}" class="modal-post-image">`
+: "";
+
+/* render comments */
+let commentsHTML = post.comments.map((c,i)=>{
+
+/* support old text comments */
+if(typeof c === "string"){
+c = {
+name: post.name,
+avatar: post.profileImage,
+text: c,
+time: Date.now(),
+likes:0,
+liked:false
+};
+}
+
+let avatar = c.avatar
+? `<img src="${c.avatar}" class="comment-avatar">`
+: `<div class="comment-avatar">${c.name.charAt(0)}</div>`;
+
+let likeClass = c.liked ? "comment-liked" : "";
+
+return `
+
+<div class="comment-row">
+
+${avatar}
+
+<div class="comment-bubble">
+
+<strong>${c.name}</strong>
+
+<div class="comment-text">${c.text}</div>
+
+<div class="comment-meta">
+
+<span class="comment-time">${timeAgo(c.time)}</span>
+
+<span class="comment-heart ${likeClass}" onclick="likeComment(${index},${i})">
+<i data-lucide="heart"></i>
+</span>
+
+<span class="comment-like-count">${c.likes > 0 ? c.likes : ""}</span>
+
+</div>
+
+</div>
+
+</div>
+
+`;
+
+}).join("");
+
+/* modal content */
+document.getElementById("modalPostContent").innerHTML = `
+
+<div class="modal-post-header">
+
+${profile}
+
+<div class="modal-post-user">
+<strong>${post.name}</strong>
+<span class="time">${timeAgo(post.time)}</span>
+</div>
+
+</div>
+
+<h3 class="modal-post-title">${post.title}</h3>
+
+<p>${post.description}</p>
+
+${imageHTML}
+
+<div class="comment-section">
+
+${commentsHTML}
+
+</div>
+
+`;
+
+/* show user avatar beside comment input */
+
+let userName = localStorage.getItem("profileName") || "User";
+let userImage = localStorage.getItem("profileImage");
+
+let avatarHTML = userImage
+? `<img src="${userImage}">`
+: userName.charAt(0);
+
+document.getElementById("commentUserAvatar").innerHTML = avatarHTML;
+
+/* open modal */
+
+document.getElementById("commentModal").style.display="flex";
+
+lucide.createIcons();
+
+}
+
+function likeComment(postIndex,commentIndex){
+
+let posts = JSON.parse(localStorage.getItem("posts")) || [];
+
+let comment = posts[postIndex].comments[commentIndex];
+
+if(comment.liked){
+comment.likes = Math.max(0, comment.likes-1);
+comment.liked=false;
+}else{
+comment.likes++;
+comment.liked=true;
+}
+
+localStorage.setItem("posts", JSON.stringify(posts));
+
+openCommentModal(postIndex);
+
+}
+
+function closeCommentModal(){
+
+document.getElementById("commentModal").style.display="none";
+
+}
+
+function deletePost(index){
+
+let confirmDelete = confirm("Are you sure you want to delete this post?");
+
+if(!confirmDelete) return;
+
+let posts = JSON.parse(localStorage.getItem("posts")) || [];
+
+posts.splice(index,1); // remove post
+
+localStorage.setItem("posts", JSON.stringify(posts));
+
+renderPosts(); // refresh feed
+
 }
 
 function likePost(index){
 
-let posts = JSON.parse(localStorage.getItem("posts"));
+let posts = JSON.parse(localStorage.getItem("posts")) || [];
+
+if(posts[index].liked){
+
+posts[index].likes = Math.max(0, posts[index].likes-1);
+posts[index].liked = false;
+
+}else{
 
 posts[index].likes++;
+posts[index].liked = true;
+
+}
 
 localStorage.setItem("posts", JSON.stringify(posts));
 
@@ -669,19 +902,33 @@ renderPosts();
 
 }
 
-function commentPost(index){
+function addComment(index,input){
 
-let comment = prompt("Enter your comment");
+let text = input.value.trim();
 
-if(!comment) return;
+if(!text) return;
 
-let posts = JSON.parse(localStorage.getItem("posts"));
+let posts = JSON.parse(localStorage.getItem("posts")) || [];
+
+let userName = localStorage.getItem("profileName") || "User";
+let userImage = localStorage.getItem("profileImage") || "";
+
+let comment = {
+name:userName,
+avatar:userImage,
+text:text,
+time:Date.now(),
+likes:0,
+liked:false
+};
 
 posts[index].comments.push(comment);
 
 localStorage.setItem("posts", JSON.stringify(posts));
 
-renderPosts();
+input.value="";
+
+openCommentModal(index); // refresh modal so new comment appears
 
 }
 
