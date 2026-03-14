@@ -339,18 +339,22 @@ let params = new URLSearchParams(window.location.search);
 
 if(params.get("payment") === "success"){
 
-/* restore saved data */
+/* restore donation data */
 donatePostIndex = parseInt(localStorage.getItem("donatePostIndex"));
-document.getElementById("donateAmount").value = localStorage.getItem("donateAmount");
+let savedAmount = localStorage.getItem("donateAmount");
 
-/* show processing first */
+if(savedAmount){
+document.getElementById("donateAmount").value = savedAmount;
+}
+
+/* show processing */
 document.getElementById("processingModal").style.display = "flex";
 
 setTimeout(function(){
 
 paymentVerified = true;
 
-/* process donation */
+/* add donation */
 confirmDonation();
 
 /* hide processing */
@@ -358,6 +362,9 @@ document.getElementById("processingModal").style.display = "none";
 
 /* show success */
 document.getElementById("donationSuccessModal").style.display = "flex";
+
+/* clean URL so refresh doesn't repeat payment */
+window.history.replaceState({}, document.title, "home.html");
 
 },2000);
 
