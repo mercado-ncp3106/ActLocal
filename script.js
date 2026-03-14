@@ -21,12 +21,26 @@ event.preventDefault();
 let email = document.getElementById("loginEmail").value;
 let password = document.getElementById("loginPassword").value;
 
-if(email === "" || password === ""){
-alert("Please fill in all fields.");
+/* get saved account */
+let savedUser = JSON.parse(localStorage.getItem("userAccount"));
+
+if(!savedUser){
+alert("No account found. Please sign up first.");
 return;
 }
 
+if(email === savedUser.email && password === savedUser.password){
+
 alert("Login successful!");
+
+/* go to home page */
+window.location.href = "home.html";
+
+}else{
+
+alert("Invalid email or password.");
+
+}
 
 }
 
@@ -54,7 +68,18 @@ return;
 
 error.textContent = "";
 
+/* save account */
+let user = {
+email: email,
+password: password
+};
+
+localStorage.setItem("userAccount", JSON.stringify(user));
+
 alert("Account created successfully!");
+
+/* redirect to login page */
+window.location.href = "index.html";
 
 }
 
