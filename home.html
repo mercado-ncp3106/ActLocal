@@ -9,32 +9,84 @@
 
 <body>
 
-    <!-- Navbar -->
-    <div class="navbar">
+   <!-- Navbar -->
+<div class="navbar">
 
-        <div class="logo home-logo">
-            <span class="act-logo">Act</span>
-            <span class="local-logo">Local</span>
+    <div class="logo home-logo">
+        <span class="act-logo">Act</span>
+        <span class="local-logo">Local</span>
+    </div>
+
+    <!-- Category Navigation -->
+    <div class="nav-actions">
+
+        <div class="nav-item active active-item" onclick="filterPosts('All')">
+            <i data-lucide="home"></i>
+            <span class="post-text"> </span>
         </div>
 
-        <div class="nav-actions">
+        <div class="nav-item waterpollution" onclick="filterPosts('Water Pollution')">
+<i data-lucide="droplet"></i>
+<span class="post-text">Water</span>
+</div>
 
-            <span class="nav-item post-item" onclick="openPost()">
-                <span class="plus">+</span>
-                <span class="post-text">Post</span>
-            </span>
+<div class="nav-item airpollution" onclick="filterPosts('Air Pollution')">
+<i data-lucide="wind"></i>
+<span class="post-text">Air</span>
+</div>
 
-            <span class="nav-item" onclick="openProfile()">
-                <i data-lucide="user"></i>
-            </span>
+<div class="nav-item wastemanagement" onclick="filterPosts('Waste Management')">
+<i data-lucide="trash-2"></i>
+<span class="post-text">Waste</span>
+</div>
 
-            <span class="nav-item">
-                <i data-lucide="log-out"></i>
-            </span>
+<div class="nav-item infrastructure" onclick="filterPosts('Infrastructure')">
+<i data-lucide="construction"></i>
+<span class="post-text">Infra</span>
+</div>
 
+<div class="nav-item coastaldegradation" onclick="filterPosts('Coastal Degradation')">
+<i data-lucide="waves"></i>
+<span class="post-text">Coastal</span>
+</div>
+
+<div class="nav-item climateresilience" onclick="filterPosts('Climate Resilience')">
+<i data-lucide="leaf"></i>
+<span class="post-text">Climate</span>
+</div>
+
+<div class="nav-item firehazard" onclick="filterPosts('Fire Hazard')">
+<i data-lucide="flame"></i>
+<span class="post-text">Fire</span>
+</div>
+
+<div class="nav-item flooddrainage" onclick="filterPosts('Flood / Drainage')">
+<i data-lucide="cloud-rain"></i>
+<span class="post-text">Flood</span>
+</div>
+
+                <div class="nav-item" onclick="filterPosts('Other')">
+            <i data-lucide="box"></i>
+            <span class="post-text">Other</span>
         </div>
 
     </div>
+
+    <!-- Right Side Buttons -->
+    <div class="nav-actions">
+
+        <span class="nav-item post-item" onclick="openPost()">
+            <span class="plus">+</span>
+            <span class="post-text">Post</span>
+        </span>
+
+        <span class="nav-item user-item" onclick="openProfile()">
+            <i data-lucide="user"></i>
+        </span>
+
+    </div>
+
+</div>
 
     <!-- Feed -->
     <div class="feed" id="feed">
@@ -79,7 +131,8 @@
                 <input id="profileEmail" type="email" required>
 
                 <label>Bio</label>
-                <textarea id="profileBio" placeholder="Write something..."></textarea>
+                <textarea id="profileBio" maxlength="150" placeholder="Write your bio..."></textarea>
+                <div id="bioCounter">0 / 150 characters</div>
 
                 <button id="saveBtn" class="save-btn">
                     <span>Save Profile</span>
@@ -99,14 +152,14 @@
                 </div>
 
                 <div class="activity-box">
-                    <strong>₱45,000</strong>
-                    <span>Donated</span>
+                    <strong id="donationTotal">₱0</strong>
+<span>Donated</span>
                 </div>
 
-                <div class="activity-box">
-                    <strong>156</strong>
-                    <span>Followers</span>
-                </div>
+<div class="activity-box">
+<strong id="helpedCount">0</strong>
+<span>Posts Helped</span>
+</div>
 
             </div>
 
@@ -129,6 +182,7 @@
         </div>
 
     </div>
+    
 
     <!-- SETTINGS MODAL -->
     <div class="profile-modal" id="settingsModal">
@@ -144,11 +198,12 @@
 
                 <h4 class="settings-section">Appearance</h4>
 
-                <label>Theme</label>
-                <select id="themeSelect">
-                    <option value="light">Light Mode</option>
-                    <option value="dark">Dark Mode</option>
-                </select>
+                <label>Dark Mode</label>
+
+<label class="theme-switch">
+<input type="checkbox" id="themeToggle">
+<span class="slider"></span>
+</label>
 
                 <hr>
 
@@ -179,6 +234,14 @@
                             Verify Number
                         </button>
                     </div>
+                    <button 
+type="button"
+id="changeNumberBtn"
+onclick="changePhoneNumber()"
+style="display:none;"
+class="change-number-btn">
+Change Number
+</button>
 
                     <div class="otp-section" id="otpSection" style="display:none;">
 
@@ -212,6 +275,8 @@
                         <p id="phoneVerifiedBadge" class="verified-badge" style="display:none;">
                             ✓ Phone Verified
                         </p>
+
+                        
 
                     </div>
 
@@ -258,6 +323,8 @@
 <div onclick="selectCategory('Infrastructure')">Infrastructure</div>
 <div onclick="selectCategory('Coastal Degradation')">Coastal Degradation</div>
 <div onclick="selectCategory('Climate Resilience')">Climate Resilience</div>
+<div onclick="selectCategory('Fire Hazard')">Fire Hazard</div>
+<div onclick="selectCategory('Flood / Drainage')">Flood / Drainage</div>
 <div onclick="selectCategory('Other')">Other</div>
 
 </div>
@@ -353,34 +420,52 @@ Delete
 
 </div>
 
+<div id="deletePostModal" class="delete-comment-modal">
+
+<div class="delete-comment-box">
+
+<h3>Delete Post?</h3>
+
+<p>Are you sure you want to delete this post?</p>
+
+<div class="delete-comment-actions">
+
+<button onclick="closeDeletePostModal()" class="cancel-delete">
+No
+</button>
+
+<button onclick="confirmDeletePost()" class="confirm-delete">
+Delete
+</button>
+
+</div>
+
+</div>
+
+</div>
+
 <div id="donateModal" class="modern-modal">
 
 <div class="modern-modal-box">
 
-<h2>Support This Cause</h2>
-
-<p class="modal-sub">Enter donation amount</p>
+<h2>Donate</h2>
 
 <input 
-type="number" 
-id="donateAmount" 
-class="modern-input" 
-placeholder="₱100"
->
+class="modern-input"
+type="number"
+id="donateAmount"
+placeholder="Enter amount">
 
 <div class="modern-actions">
 
-<button onclick="closeDonate()" class="btn-light">
-Cancel
-</button>
+<button class="btn-light" onclick="closeDonate()">Cancel</button>
 
-<button onclick="goPayment()" class="btn-primary">
-Continue
-</button>
+<button class="btn-primary" onclick="goPayment()">Next</button>
 
 </div>
 
 </div>
+
 </div>
 
 <div id="paymentModal" class="modern-modal">
@@ -406,6 +491,14 @@ Continue
 <div class="payment-card" onclick="openQR()">
 <span>QRPH</span>
 </div>
+
+</div>
+
+<div class="modern-actions">
+
+<button onclick="closePayment()" class="btn-light">
+Cancel
+</button>
 
 </div>
 
@@ -570,10 +663,6 @@ Resend OTP
 Cancel
 </button>
 
-<button onclick="confirmDonation()" class="btn-primary">
-I Have Paid
-</button>
-
 </div>
 
 </div>
@@ -608,6 +697,14 @@ Close
 </button>
 
 </div>
+
+</div>
+
+<div id="imageViewer" class="image-viewer">
+
+<span class="close-image" onclick="closeImageViewer()">✕</span>
+
+<img id="fullImage">
 
 </div>
 

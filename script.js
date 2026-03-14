@@ -12,6 +12,14 @@ let paymentOtpSeconds = 60;
 let bankOTP = "";
 let bankOtpTimer;
 let bankOtpSeconds = 60;
+let zoomLevel = 1;
+let isDragging = false;
+let startX, startY;
+let translateX = 0;
+let translateY = 0;
+let currentCategory = "All";
+let helpedPosts = JSON.parse(localStorage.getItem("helpedPosts")) || [];
+let donateFromModal = false;
 //=====================================================
 // LOGIN
 function login(event){
@@ -88,27 +96,117 @@ window.location.href = "index.html";
 
 //=====================================================
 // PROFILE MODAL
+function isNewUser(){
+return !localStorage.getItem("profileName");
+}
+
 function openProfile(){
+
+document.getElementById("profileName").value =
+localStorage.getItem("profileName") || "";
+
+document.getElementById("profileEmail").value =
+localStorage.getItem("profileEmail") || "";
+
+let bioInput = document.getElementById("profileBio");
+bioInput.value = localStorage.getItem("profileBio") || "";
+
+/* update counter */
+let length = bioInput.value.length;
+
+document.getElementById("bioCounter").textContent =
+length + " / 150 characters";
+
+if(length >= 140){
+document.getElementById("bioCounter").classList.add("limit");
+}else{
+document.getElementById("bioCounter").classList.remove("limit");
+}
+
 document.getElementById("profileModal").style.display = "flex";
 document.body.classList.add("no-scroll");
+
 }
 
 function closeProfile(){
+if(isNewUser()){
+alert("Please complete your profile before exiting.");
+return;
+}
+
+document.getElementById("profileName").value =
+localStorage.getItem("profileName") || "";
+
+document.getElementById("profileEmail").value =
+localStorage.getItem("profileEmail") || "";
+
+document.getElementById("profileBio").value =
+localStorage.getItem("profileBio") || "";
+
 document.getElementById("profileModal").style.display = "none";
+document.body.classList.remove("no-scroll");
+
 }
 
 
 //=====================================================
 // SETTINGS MODAL
 function openSettings(){
+
+
+let savedTheme = localStorage.getItem("theme");
+
+/* set toggle state */
+let toggle = document.getElementById("themeToggle");
+
+if(savedTheme === "dark"){
+toggle.checked = true;
+}else{
+toggle.checked = false;
+}
+
+document.getElementById("houseNumber").value =
+localStorage.getItem("house") || "";
+
+document.getElementById("streetName").value =
+localStorage.getItem("street") || "";
+
+document.getElementById("cityName").value =
+localStorage.getItem("city") || "";
+
+document.getElementById("provinceName").value =
+localStorage.getItem("province") || "";
+
 document.getElementById("settingsModal").style.display = "flex";
 document.body.classList.add("no-scroll");
+
 }
 
 function closeSettings(){
-document.getElementById("settingsModal").style.display = "none";
+
+let house = document.getElementById("houseNumber").value.trim();
+let street = document.getElementById("streetName").value.trim();
+let city = document.getElementById("cityName").value.trim();
+let province = document.getElementById("provinceName").value.trim();
+let phone = document.getElementById("userPhone").value.trim();
+
+/* require all fields */
+if(!house || !street || !city || !province || !phone){
+alert("Please complete all settings fields before closing.");
+return;
 }
 
+/* require phone verification */
+if(!phoneVerified){
+alert("Please verify your cellphone number before closing settings.");
+return;
+}
+
+/* close modal */
+document.getElementById("settingsModal").style.display = "none";
+document.body.classList.remove("no-scroll");
+
+}
 //=====================================================
 // SAVE PROFILE
 function saveProfile(event){
@@ -123,7 +221,23 @@ localStorage.setItem("profileName", name);
 localStorage.setItem("profileEmail", email);
 localStorage.setItem("profileBio", bio);
 
+let bioWords = bio.trim().split(/\s+/);
+
+if(bioWords.length > 150){
+alert("Bio must be 150 words only.");
+return;
+}
+
+/* save image only when profile is saved */
+let img = document.getElementById("profileImage");
+
+if(img.dataset.tempImage){
+localStorage.setItem("profileImage", img.dataset.tempImage);
+}
+
 updateAvatar();
+
+renderPosts();
 
 let btn = document.getElementById("saveBtn");
 
@@ -180,7 +294,8 @@ img.src = e.target.result;
 img.style.display = "block";
 avatar.style.display = "none";
 
-localStorage.setItem("profileImage", e.target.result);
+/* temporarily store image until Save Profile */
+img.dataset.tempImage = e.target.result;
 
 };
 
@@ -197,7 +312,15 @@ function saveSettings(event){
 
 event.preventDefault();
 
-let theme = document.getElementById("themeSelect").value;
+let themeToggle = document.getElementById("themeToggle");
+let theme = themeToggle.checked ? "dark" : "light";
+if(theme === "dark"){
+document.body.classList.add("dark");
+}else{
+document.body.classList.remove("dark");
+}
+
+localStorage.setItem("theme", theme);
 let house = document.getElementById("houseNumber").value.trim();
 let street = document.getElementById("streetName").value.trim();
 let city = document.getElementById("cityName").value.trim();
@@ -207,7 +330,7 @@ let phone = document.getElementById("userPhone").value.trim();
 /* phone validation */
 let phonePattern = /^09\d{9}$/;
 
-if(!phonePattern.test(phone)){
+if(phone !== "" && !phonePattern.test(phone)){
 document.getElementById("userPhone").setCustomValidity(
 "Cellphone number must start with 09 and contain 11 digits (example: 09123456789)"
 );
@@ -217,15 +340,11 @@ return;
 document.getElementById("userPhone").setCustomValidity("");
 }
 
-/* check verification */
+/* require verification only if OTP section is visible */
+/* require phone verification before saving */
 if(!phoneVerified){
-
-alert("Please verify your phone number first.");
-
+alert("Please verify your cellphone number before saving settings.");
 return;
-
-}else{
-document.getElementById("userPhone").setCustomValidity("");
 }
 
 /* save settings */
@@ -238,14 +357,15 @@ localStorage.setItem("phone", phone);
 
 /* success animation */
 let btn = document.getElementById("settingsSaveBtn");
+let text = btn.querySelector("span");
 
-btn.textContent = "✔ Saved";
+text.textContent = "✔ Saved";
 btn.classList.add("saved");
 
 setTimeout(function(){
 
 btn.classList.remove("saved");
-btn.textContent = "Save Settings";
+text.textContent = "Save Settings";
 
 },1500);
 
@@ -256,6 +376,29 @@ btn.textContent = "Save Settings";
 window.onload = function(){
 
 renderPosts();
+
+let bioInput = document.getElementById("profileBio");
+
+if(bioInput){
+
+bioInput.addEventListener("input", function(){
+
+let length = this.value.length;
+
+document.getElementById("bioCounter").textContent =
+length + " / 150 characters";
+
+if(length >= 140){
+document.getElementById("bioCounter").classList.add("limit");
+}else{
+document.getElementById("bioCounter").classList.remove("limit");
+}
+
+updatePostsHelped();
+
+});
+
+}
 
 let modalInput = document.getElementById("modalCommentInput");
 
@@ -292,23 +435,40 @@ if(email && document.getElementById("profileEmail")){
 document.getElementById("profileEmail").value = email;
 }
 
-if(bio && document.getElementById("profileBio")){
-document.getElementById("profileBio").value = bio;
+if(document.getElementById("profileBio")){
+
+let bioInput = document.getElementById("profileBio");
+
+bioInput.value = bio || "";
+
+let length = bioInput.value.length;
+
+document.getElementById("bioCounter").textContent =
+length + " / 150 characters";
+
+if(length >= 140){
+document.getElementById("bioCounter").classList.add("limit");
+}else{
+document.getElementById("bioCounter").classList.remove("limit");
+}
+
 }
 
 updateAvatar();
 
 /* SETTINGS DATA */
 let theme = localStorage.getItem("theme");
+
+if(theme === "dark"){
+document.body.classList.add("dark");
+document.getElementById("themeToggle").checked = true;
+}
+
 let house = localStorage.getItem("house");
 let street = localStorage.getItem("street");
 let city = localStorage.getItem("city");
 let province = localStorage.getItem("province");
 let phone = localStorage.getItem("phone");
-
-if(theme && document.getElementById("themeSelect")){
-document.getElementById("themeSelect").value = theme;
-}
 
 if(house) document.getElementById("houseNumber").value = house;
 if(street) document.getElementById("streetName").value = street;
@@ -319,11 +479,58 @@ if(phone && document.getElementById("userPhone")){
 document.getElementById("userPhone").value = phone;
 }
 
+let verifiedPhone = localStorage.getItem("verifiedPhone");
+let verifiedStatus = localStorage.getItem("phoneVerified");
+
+let phoneInput = document.getElementById("userPhone");
+
+if(verifiedStatus === "true" && phoneInput){
+
+phoneVerified = true;
+
+/* restore verified number */
+phoneInput.value = verifiedPhone;
+
+document.getElementById("phoneVerifiedBadge").style.display = "block";
+
+phoneInput.disabled = true;
+
+/* hide OTP section */
+document.getElementById("otpSection").style.display = "none";
+
+/* hide verify button */
+document.querySelector(".verify-btn").style.display = "none";
+
+/* show change number */
+document.getElementById("changeNumberBtn").style.display = "inline-block";
+
+}
+
 /* POST COUNT */
 let posts = JSON.parse(localStorage.getItem("posts")) || [];
 
+let helped = JSON.parse(localStorage.getItem("helpedPosts")) || [];
+
+let helpedDisplay = document.getElementById("helpedCount");
+
+if(helpedDisplay){
+helpedDisplay.textContent = helped.length;
+}
+
 if(document.getElementById("postCount")){
 document.getElementById("postCount").textContent = posts.length;
+}
+
+let totalDonations = 0;
+
+posts.forEach(post=>{
+totalDonations += post.donations || 0;
+});
+
+let donationDisplay = document.getElementById("donationTotal");
+
+if(donationDisplay){
+donationDisplay.textContent = "₱" + totalDonations.toLocaleString();
 }
 
 /* AVATAR CLICK → FILE PICKER */
@@ -353,6 +560,7 @@ let processing = document.getElementById("processingModal");
 
 if(processing){
 processing.style.display = "flex";
+document.body.classList.add("no-scroll");
 }
 
 setTimeout(function(){
@@ -366,7 +574,15 @@ processing.style.display = "none";
 
 /* show success */
 document.getElementById("donationSuccessModal").style.display = "flex";
+document.body.classList.add("no-scroll");
 
+donateFromModal = localStorage.getItem("donateFromModal") === "true";
+
+if(donateFromModal){
+openCommentModal(donatePostIndex);
+}
+
+localStorage.removeItem("donateFromModal");
 /* remove URL parameter */
 window.history.replaceState({}, document.title, "home.html");
 
@@ -377,8 +593,49 @@ window.history.replaceState({}, document.title, "home.html");
 }
 
 setupImageUpload();
-
+setInterval(updateTimes,10000);
 };
+
+let phoneInputField = document.getElementById("userPhone");
+
+if(phoneInputField){
+
+phoneInputField.addEventListener("input", function(){
+
+let verifiedPhone = localStorage.getItem("verifiedPhone");
+
+/* only reset if number really changed */
+if(verifiedPhone && this.value !== verifiedPhone){
+
+phoneVerified = false;
+
+localStorage.removeItem("phoneVerified");
+localStorage.removeItem("verifiedPhone");
+
+document.getElementById("phoneVerifiedBadge").style.display = "none";
+document.getElementById("changeNumberBtn").style.display = "none";
+
+document.getElementById("otpSection").style.display = "block";
+
+}
+
+
+
+});
+
+}
+
+function updatePostsHelped(){
+
+let helped = JSON.parse(localStorage.getItem("helpedPosts")) || [];
+
+let helpedDisplay = document.getElementById("helpedCount");
+
+if(helpedDisplay){
+helpedDisplay.textContent = helped.length;
+}
+
+}
 
 // OTP
 function generateOTP(){
@@ -388,7 +645,7 @@ let verifyBtn = document.querySelector(".verify-btn");
 
 let phonePattern = /^09\d{9}$/;
 
-if(!phonePattern.test(phone)){
+if(phone !== "" && !phonePattern.test(phone)){
 alert("Enter valid phone number like 09123456789");
 return;
 }
@@ -420,6 +677,27 @@ inputs[0].focus();
 verifyBtn.disabled = true;
 
 startOTPTimer();
+
+}
+
+function filterPosts(category){
+
+currentCategory = category;
+
+/* highlight active nav item */
+let items = document.querySelectorAll(".nav-item");
+items.forEach(i => i.classList.remove("active"));
+
+event.currentTarget.classList.add("active");
+
+/* scroll to top */
+window.scrollTo({
+top:0,
+behavior:"smooth"
+});
+
+/* render posts */
+renderPosts();
 
 }
 
@@ -484,6 +762,8 @@ setupPaymentOTPInputs();
 
 function verifyOTP(){
 
+document.querySelector(".verify-btn").style.display = "none";
+
 let inputs = document.querySelectorAll(".otp-input");
 
 let userOTP = "";
@@ -496,13 +776,21 @@ if(userOTP === generatedOTP){
 
 phoneVerified = true;
 
+/* save verification status */
+localStorage.setItem("phoneVerified", "true");
+
+/* save verified phone */
+let phone = document.getElementById("userPhone").value.trim();
+localStorage.setItem("verifiedPhone", phone);
+
 /* hide OTP section */
-document.querySelector(".otp-boxes").style.display = "none";
-document.querySelector(".otp-actions").style.display = "none";
-document.getElementById("otpTimer").style.display = "none";
+document.getElementById("otpSection").style.display = "none";
 
 /* show verified badge */
 document.getElementById("phoneVerifiedBadge").style.display = "block";
+document.getElementById("changeNumberBtn").style.display = "inline-block";
+
+document.getElementById("settingsSaveBtn").disabled = false;
 
 /* lock phone input */
 document.getElementById("userPhone").disabled = true;
@@ -514,6 +802,57 @@ alert("Phone verified successfully!");
 alert("Invalid OTP");
 
 }
+
+}
+
+function changePhoneNumber(){
+
+let phoneInput = document.getElementById("userPhone");
+let verifyBtn = document.querySelector(".verify-btn");
+
+/* unlock phone input */
+phoneInput.disabled = false;
+
+/* clear phone number */
+phoneInput.value = "";
+
+/* show verify button again */
+verifyBtn.style.display = "inline-block";
+verifyBtn.disabled = false;
+
+/* hide verified badge */
+document.getElementById("phoneVerifiedBadge").style.display = "none";
+
+/* hide change number button */
+document.getElementById("changeNumberBtn").style.display = "none";
+
+/* hide OTP section */
+document.getElementById("otpSection").style.display = "none";
+
+/* reset verification state */
+phoneVerified = false;
+generatedOTP = "";
+
+/* clear OTP boxes */
+document.querySelectorAll(".otp-input").forEach(input=>{
+input.value = "";
+});
+
+/* reset timer */
+clearInterval(otpTimer);
+otpSeconds = 60;
+
+let timer = document.getElementById("otpTimer");
+if(timer){
+timer.textContent = "";
+}
+
+/* remove saved verification */
+localStorage.removeItem("phoneVerified");
+localStorage.removeItem("verifiedPhone");
+
+/* focus input */
+phoneInput.focus();
 
 }
 
@@ -552,12 +891,27 @@ generatedOTP = "";
 
 // Post
 function openPost(){
+
+/* reset edit mode */
+if(editingPostIndex === null){
+
+document.getElementById("postTitle").value="";
+document.getElementById("postDescription").value="";
+document.getElementById("postCategory").value="";
+document.getElementById("selectedCategory").textContent="Select Category";
+
+removeImage();
+
+}
+
 document.getElementById("postModal").style.display="flex";
 document.body.classList.add("no-scroll");
+
 }
 
 function closePost(){
 document.getElementById("postModal").style.display="none";
+document.body.classList.remove("no-scroll");
 }
 
 function toggleCategory(){
@@ -598,6 +952,13 @@ imageInput.addEventListener("change", function(){
 let file = this.files[0];
 if(!file) return;
 
+/* LIMIT IMAGE SIZE */
+if(file.size > 700000){ // 700KB limit
+alert("Image must be less than 700KB.");
+this.value = "";
+return;
+}
+
 let reader = new FileReader();
 
 reader.onload = function(e){
@@ -616,28 +977,7 @@ reader.readAsDataURL(file);
 
 }
 
-/* image selected */
-imageInput.addEventListener("change", function(){
 
-let file = this.files[0];
-if(!file) return;
-
-let reader = new FileReader();
-
-reader.onload = function(e){
-
-preview.src = e.target.result;
-preview.style.display = "block";
-
-uploadText.style.display = "none";
-
-removeBtn.style.display = "block";
-
-};
-
-reader.readAsDataURL(file);
-
-});
 
 /* remove image */
 function removeImage(event){
@@ -665,11 +1005,27 @@ function createPost(event){
 
 event.preventDefault();
 
-document.getElementById("selectedCategory").textContent="Select Category";
 let title = document.getElementById("postTitle").value;
 let category = document.getElementById("postCategory").value;
 let description = document.getElementById("postDescription").value;
-let image = document.getElementById("imagePreview").src;
+
+let image = "";
+
+/* get preview safely */
+let previewElement = document.getElementById("imagePreview");
+
+if(previewElement && previewElement.src && previewElement.src.startsWith("data:image")){
+image = previewElement.src;
+}
+
+/* require image upload */
+if(!previewElement || !previewElement.src || !previewElement.src.startsWith("data:image")){
+uploadBox.classList.add("upload-error");
+setTimeout(function(){
+uploadBox.classList.remove("upload-error");
+},1000);
+return;
+}
 
 let name = localStorage.getItem("profileName") || "Anonymous";
 let profileImage = localStorage.getItem("profileImage") || "";
@@ -693,59 +1049,70 @@ donations:0,
 time: Date.now()
 };
 
+/* EDIT POST */
 if(editingPostIndex !== null){
 
 let posts = JSON.parse(localStorage.getItem("posts")) || [];
 
-/* keep original time */
 post.time = posts[editingPostIndex].time;
-
-/* keep other data */
 post.likes = posts[editingPostIndex].likes;
 post.liked = posts[editingPostIndex].liked;
 post.comments = posts[editingPostIndex].comments;
 post.donations = posts[editingPostIndex].donations;
 
-/* update post */
 posts[editingPostIndex] = post;
 
 localStorage.setItem("posts", JSON.stringify(posts));
+
+let editedIndex = editingPostIndex;
 
 editingPostIndex = null;
 
 renderPosts();
 closePost();
+
+/* refresh modal post if it was open */
+let modal = document.getElementById("commentModal");
+
+if(modal && modal.style.display === "flex"){
+openCommentModal(editedIndex);
+}
+
 return;
 
 }
 
+/* NEW POST */
 let posts = JSON.parse(localStorage.getItem("posts")) || [];
 
 posts.unshift(post);
 
+try{
 localStorage.setItem("posts", JSON.stringify(posts));
-
-/* update post counter */
+}catch(e){
+alert("Storage full. Please delete some posts or remove images.");
+return;
+}
 
 renderPosts();
 
-/* reset form */
+/* RESET FORM */
 document.getElementById("postTitle").value="";
 document.getElementById("postDescription").value="";
 document.getElementById("postCategory").value="";
 document.getElementById("selectedCategory").textContent="Select Category";
 
-let preview = document.getElementById("imagePreview");
-let uploadText = document.getElementById("uploadText");
-let removeBtn = document.getElementById("removeImageBtn");
-let imageInput = document.getElementById("postImage");
-
-preview.src="";
-preview.style.display="none";
+if(previewElement){
+previewElement.src="";
+previewElement.style.display="none";
+}
 
 uploadText.style.display="block";
 removeBtn.style.display="none";
+
+if(imageInput){
 imageInput.value="";
+}
 
 closePost();
 
@@ -772,9 +1139,18 @@ return;
 
 posts.forEach((post,index)=>{
 
-let profile = post.profileImage
-? `<img src="${post.profileImage}" class="profile-avatar-small">`
-: `<div class="profile-avatar-small">${post.name.charAt(0)}</div>`;
+if(currentCategory !== "All" && post.category !== currentCategory){
+return;
+}
+
+
+
+let currentName = localStorage.getItem("profileName") || post.name;
+let currentImage = localStorage.getItem("profileImage");
+
+let profile = currentImage
+? `<img src="${currentImage}" class="profile-avatar-small">`
+: `<div class="profile-avatar-small">${currentName.charAt(0)}</div>`;
 
 let imageHTML = post.image 
 ? `<img src="${post.image}" class="post-image" onclick="openCommentModal(${index})">`
@@ -788,12 +1164,12 @@ let postHTML = `
 <div style="display:flex;align-items:center;gap:10px;">
 ${profile}
 <div>
-<strong>${post.name}</strong><br>
-<span class="time">${timeAgo(post.time)}</span>
+<strong class="post-name">${localStorage.getItem("profileName") || post.name}</strong><br>
+<span class="time" data-time="${post.time}">${timeAgo(post.time)}</span>
 </div>
 </div>
 
-<span class="tag">${post.category}</span>
+<span class="tag ${post.category.replace(/[^a-z]/gi,'').toLowerCase()}">${post.category}</span>
 
 </div>
 
@@ -870,9 +1246,12 @@ liked:false
 };
 }
 
-let avatar = c.avatar
-? `<img src="${c.avatar}">`
-: c.name.charAt(0);
+let currentImage = localStorage.getItem("profileImage");
+let currentName = localStorage.getItem("profileName") || c.name;
+
+let avatar = currentImage
+? `<img src="${currentImage}">`
+: currentName.charAt(0);
 
 return `
 <div class="comment-item">
@@ -883,15 +1262,19 @@ ${avatar}
 
 <div class="comment-bubble">
 
-<strong>${c.name}</strong>
+<strong>${currentName}</strong>
 
 <div class="comment-text">${c.text}</div>
 
 <div class="comment-meta">
 
-<span class="comment-time">
+<span 
+class="comment-time" 
+data-time="${c.time}" 
+data-edited="${c.edited ? c.editedTime : ""}"
+>
 ${timeAgo(c.time)}
-${c.edited ? " · Edited" : ""}
+${c.edited ? ` · Edited (${timeAgo(c.editedTime)})` : ""}
 </span>
 
 <span class="comment-heart ${c.liked ? "comment-liked" : ""}" 
@@ -932,6 +1315,27 @@ feed.insertAdjacentHTML("beforeend",postHTML);
 lucide.createIcons();
 }
 
+function updateTimes(){
+
+document.querySelectorAll("[data-time]").forEach(el=>{
+
+let timestamp = parseInt(el.getAttribute("data-time"));
+let edited = el.getAttribute("data-edited");
+
+if(!timestamp) return;
+
+let text = timeAgo(timestamp);
+
+if(edited){
+text += " · Edited (" + timeAgo(parseInt(edited)) + ")";
+}
+
+el.textContent = text;
+
+});
+
+}
+
 function closePostMenu(el){
 
 let menu = el.closest(".post-dropdown");
@@ -964,7 +1368,7 @@ let post = posts[index];
 
 editingPostIndex = index;
 
-/* open modal */
+/* open edit modal without closing post modal */
 openPost();
 
 /* fill fields */
@@ -989,7 +1393,6 @@ removeBtn.style.display = "block";
 }
 
 }
-
 function toggleComments(index){
 
 let section = document.getElementById("comments-"+index);
@@ -1002,7 +1405,11 @@ section.style.display = "none";
 
 }
 
+
 function openCommentModal(index){
+
+
+document.body.classList.add("no-scroll");
 
 currentPostIndex = index;
 
@@ -1011,16 +1418,20 @@ let posts = JSON.parse(localStorage.getItem("posts")) || [];
 let post = posts[index];
 
 /* modal title */
-document.getElementById("modalPostTitle").textContent = post.name + "'s Post";
+document.getElementById("modalPostTitle").textContent =
+(localStorage.getItem("profileName") || post.name) + "'s Post";
 
 /* post avatar */
-let profile = post.profileImage
-? `<img src="${post.profileImage}" class="modal-avatar">`
-: `<div class="modal-avatar">${post.name.charAt(0)}</div>`;
+let currentImage = localStorage.getItem("profileImage");
+let currentName = localStorage.getItem("profileName") || post.name;
+
+let profile = currentImage
+? `<img src="${currentImage}" class="modal-avatar">`
+: `<div class="modal-avatar">${currentName.charAt(0)}</div>`;
 
 /* post image */
 let imageHTML = post.image
-? `<img src="${post.image}" class="modal-post-image">`
+? `<img src="${post.image}" class="modal-post-image" onclick="openImageViewer('${post.image}')">`
 : "";
 
 /* render comments */
@@ -1038,9 +1449,12 @@ liked:false
 };
 }
 
-let avatar = c.avatar
-? `<img src="${c.avatar}" class="comment-avatar">`
-: `<div class="comment-avatar">${c.name.charAt(0)}</div>`;
+let currentImage = localStorage.getItem("profileImage");
+let currentName = localStorage.getItem("profileName") || c.name;
+
+let avatar = currentImage
+? `<img src="${currentImage}" class="comment-avatar">`
+: `<div class="comment-avatar">${currentName.charAt(0)}</div>`;
 
 let likeClass = c.liked ? "comment-liked" : "";
 
@@ -1052,7 +1466,7 @@ ${avatar}
 
 <div class="comment-bubble">
 
-<strong>${c.name}</strong>
+<strong>${currentName}</strong>
 
 <div class="comment-text" id="comment-text-${index}-${i}">
 ${c.text}
@@ -1060,7 +1474,11 @@ ${c.text}
 
 <div class="comment-meta">
 
-<span class="comment-time">
+<span 
+class="comment-time" 
+data-time="${c.time}" 
+data-edited="${c.edited ? c.editedTime : ""}"
+>
 ${timeAgo(c.time)}
 ${c.edited ? ` · Edited (${timeAgo(c.editedTime)})` : ""}
 </span>
@@ -1079,12 +1497,12 @@ ${c.edited ? ` · Edited (${timeAgo(c.editedTime)})` : ""}
 
 <div class="comment-dropdown">
 
-<div onclick="editComment(${index},${i})">
+<div onclick="editComment(${index},${i}); closeCommentMenu(this)">
 <i data-lucide="edit-3"></i>
 <span>Edit Comment</span>
 </div>
 
-<div onclick="deleteComment(${index},${i})">
+<div onclick="deleteComment(${index},${i}); closeCommentMenu(this)">
 <i data-lucide="trash-2"></i>
 <span>Delete Comment</span>
 </div>
@@ -1106,14 +1524,22 @@ ${c.edited ? ` · Edited (${timeAgo(c.editedTime)})` : ""}
 /* modal content */
 document.getElementById("modalPostContent").innerHTML = `
 
+
+
 <div class="modal-post-header">
 
+<div style="display:flex;align-items:center;gap:10px;">
 ${profile}
 
 <div class="modal-post-user">
-<strong>${post.name}</strong>
-<span class="time">${timeAgo(post.time)}</span>
+<strong>${localStorage.getItem("profileName") || post.name}</strong>
+<span class="time" data-time="${post.time}">${timeAgo(post.time)}</span>
 </div>
+</div>
+
+<span class="tag ${post.category.replace(/[^a-z]/gi,'').toLowerCase()}">
+${post.category}
+</span>
 
 </div>
 
@@ -1122,6 +1548,49 @@ ${profile}
 <p>${post.description}</p>
 
 ${imageHTML}
+
+<div class="post-stats">
+
+<span>${post.likes} likes</span>
+<span>${post.comments.length} comments</span>
+<span class="donate-total">₱${post.donations}</span>
+
+</div>
+
+<div class="post-actions">
+
+<button onclick="likePost(${index})" class="like-btn ${post.liked ? 'liked' : ''}">
+<i data-lucide="heart"></i>
+<span>Like</span>
+</button>
+
+<button onclick="openDonate(${index})" class="donate-btn">
+<i data-lucide="banknote"></i> Donate
+</button>
+
+<div class="post-menu">
+
+<span class="post-dots" onclick="togglePostMenu(this)">
+<i data-lucide="more-horizontal"></i>
+</span>
+
+<div class="post-dropdown">
+
+<div onclick="editPost(${index}); closePostMenu(this)">
+<i data-lucide="edit-3"></i>
+<span>Edit Post</span>
+</div>
+
+<div onclick="deletePost(${index}); closePostMenu(this)">
+<i data-lucide="trash-2"></i>
+<span>Delete Post</span>
+</div>
+
+</div>
+
+</div>
+
+</div>
 
 <div class="comment-section">
 
@@ -1150,6 +1619,109 @@ lucide.createIcons();
 
 }
 
+function openImageViewer(src){
+
+let viewer = document.getElementById("imageViewer");
+let img = document.getElementById("fullImage");
+
+viewer.style.display = "flex";
+img.src = src;
+
+zoomLevel = 1;
+translateX = 0;
+translateY = 0;
+
+img.style.transform = "scale(1) translate(0px,0px)";
+
+document.body.classList.add("no-scroll");
+
+}
+let fullImage = document.getElementById("fullImage");
+
+if(fullImage){
+
+/* ZOOM */
+fullImage.addEventListener("wheel", function(e){
+
+e.preventDefault();
+
+if(e.deltaY < 0){
+zoomLevel += 0.1;
+}else{
+zoomLevel -= 0.1;
+}
+
+zoomLevel = Math.min(Math.max(1, zoomLevel), 4);
+
+updateTransform();
+
+});
+
+/* HOLD MOUSE TO PAN */
+fullImage.addEventListener("mousedown", function(e){
+
+if(zoomLevel <= 1) return;
+
+isDragging = true;
+
+startX = e.clientX - translateX;
+startY = e.clientY - translateY;
+
+this.style.cursor = "grabbing";
+
+});
+
+}
+
+fullImage.addEventListener("mousedown", function(e){
+
+if(zoomLevel <= 1) return;
+
+isDragging = true;
+
+startX = e.clientX - translateX;
+startY = e.clientY - translateY;
+
+this.style.cursor = "grabbing";
+
+});
+document.addEventListener("mousemove", function(e){
+
+if(!isDragging) return;
+
+translateX = e.clientX - startX;
+translateY = e.clientY - startY;
+
+updateTransform();
+
+});
+
+document.addEventListener("mouseup", function(){
+
+isDragging = false;
+
+let img = document.getElementById("fullImage");
+if(img) img.style.cursor = "grab";
+
+});
+
+function updateTransform(){
+
+let img = document.getElementById("fullImage");
+
+img.style.transform =
+`translate(${translateX}px, ${translateY}px) scale(${zoomLevel})`;
+
+}
+
+function closeImageViewer(){
+
+document.getElementById("imageViewer").style.display = "none";
+
+document.body.classList.add("no-scroll");
+
+}
+
 function editComment(postIndex, commentIndex){
 
 let posts = JSON.parse(localStorage.getItem("posts")) || [];
@@ -1164,12 +1736,21 @@ let originalText = comment.text;
 
 /* replace comment with input */
 textElement.innerHTML = `
+<div class="edit-comment-container">
+
 <input 
-type="text" 
+type="text"
 class="edit-comment-input"
 value="${originalText}"
 id="editInput-${postIndex}-${commentIndex}"
 >
+
+<div class="edit-actions">
+<button onclick="saveEditedComment(${postIndex},${commentIndex})">Save</button>
+<button onclick="cancelEditComment(${postIndex},${commentIndex},'${originalText}')">Cancel</button>
+</div>
+
+</div>
 `;
 
 let input = document.getElementById(`editInput-${postIndex}-${commentIndex}`);
@@ -1209,6 +1790,45 @@ textElement.innerHTML = originalText;
 }
 
 });
+
+}
+
+function saveEditedComment(postIndex,commentIndex){
+
+let posts = JSON.parse(localStorage.getItem("posts")) || [];
+
+let input = document.getElementById(`editInput-${postIndex}-${commentIndex}`);
+
+let newText = input.value.trim();
+
+if(!newText) return;
+
+posts[postIndex].comments[commentIndex].text = newText;
+posts[postIndex].comments[commentIndex].edited = true;
+posts[postIndex].comments[commentIndex].editedTime = Date.now();
+
+localStorage.setItem("posts", JSON.stringify(posts));
+
+renderPosts();
+openCommentModal(postIndex);
+
+}
+
+function cancelEditComment(postIndex,commentIndex,originalText){
+
+let textElement = document.getElementById(`comment-text-${postIndex}-${commentIndex}`);
+
+textElement.innerHTML = originalText;
+
+}
+
+function closeCommentMenu(el){
+
+let menu = el.closest(".comment-dropdown");
+
+if(menu){
+menu.style.display = "none";
+}
 
 }
 
@@ -1292,22 +1912,40 @@ openCommentModal(deletePostIndex);
 function closeCommentModal(){
 
 document.getElementById("commentModal").style.display="none";
-
+document.body.classList.remove("no-scroll");
 }
 
 function deletePost(index){
 
-let confirmDelete = confirm("Are you sure you want to delete this post?");
+deletePostIndex = index;
 
-if(!confirmDelete) return;
+document.getElementById("deletePostModal").style.display = "flex";
+document.body.classList.add("no-scroll");
+
+}
+
+function closeDeletePostModal(){
+
+document.getElementById("deletePostModal").style.display = "none";
+document.body.classList.remove("no-scroll");
+
+}
+function confirmDeletePost(){
 
 let posts = JSON.parse(localStorage.getItem("posts")) || [];
 
-posts.splice(index,1); // remove post
+posts.splice(deletePostIndex,1);
 
 localStorage.setItem("posts", JSON.stringify(posts));
 
-renderPosts(); // refresh feed
+closeDeletePostModal();
+
+/* close the post modal if open */
+closeCommentModal();
+
+document.body.classList.remove("no-scroll");
+
+renderPosts();
 
 }
 
@@ -1330,6 +1968,13 @@ posts[index].liked = true;
 localStorage.setItem("posts", JSON.stringify(posts));
 
 renderPosts();
+
+/* refresh modal if open */
+let modal = document.getElementById("commentModal");
+
+if(modal && modal.style.display === "flex"){
+openCommentModal(index);
+}
 
 }
 
@@ -1393,7 +2038,8 @@ let modals = [
 "settingsModal",
 "postModal",
 "commentModal",
-"deleteCommentModal"
+"deleteCommentModal",
+"deletePostModal"
 ];
 
 modals.forEach(id => {
@@ -1502,16 +2148,25 @@ function openDonate(index){
 
 donatePostIndex = index;
 
+/* check if modal post is open */
+let modal = document.getElementById("commentModal");
+
+donateFromModal = modal && modal.style.display === "flex";
+
+/* save state so it survives page change */
+localStorage.setItem("donateFromModal", donateFromModal);
+
 document.getElementById("donateAmount").value = "";
 
 document.getElementById("donateModal").style.display = "flex";
 
+document.body.classList.add("no-scroll");
+
 }
 
 function closeDonate(){
-
 document.getElementById("donateModal").style.display = "none";
-
+document.body.classList.remove("no-scroll");
 }
 
 function goPayment(){
@@ -1531,11 +2186,12 @@ document.getElementById("paymentModal").style.display = "flex";
 function closePayment(){
 
 document.getElementById("paymentModal").style.display = "none";
+document.body.classList.remove("no-scroll");
 
 }
 
 function openGCash(){
-
+document.body.classList.add("no-scroll");
 document.getElementById("paymentModal").style.display="none";
 document.getElementById("gcashModal").style.display="flex";
 
@@ -1557,7 +2213,7 @@ paymentVerified = false;
 }
 
 function closeGCash(){
-
+document.body.classList.remove("no-scroll");
 document.getElementById("gcashModal").style.display="none";
 
 /* reset everything */
@@ -1565,6 +2221,7 @@ document.getElementById("gcashPhone").value="";
 document.getElementById("paymentOtpSection").style.display="none";
 document.getElementById("gcashCancelInitial").style.display="block";
 document.querySelectorAll(".payment-otp-input").forEach(i=>i.value="");
+document.body.classList.remove("no-scroll");
 
 clearInterval(paymentOtpTimer);
 
@@ -1584,6 +2241,8 @@ document.querySelector("#gcashModal h2").textContent = "Maya Payment";
 
 function openBank(){
 
+document.body.classList.add("no-scroll");
+
 document.getElementById("paymentModal").style.display="none";
 document.getElementById("bankModal").style.display="flex";
 
@@ -1596,7 +2255,7 @@ document.getElementById("bankOtpSection").style.display="none";
 }
 
 function openQR(){
-
+document.body.classList.add("no-scroll");
 document.getElementById("paymentModal").style.display = "none";
 document.getElementById("qrModal").style.display = "flex";
 
@@ -1699,6 +2358,7 @@ document.getElementById("gcashModal").style.display="none";
 
 /* show processing */
 document.getElementById("processingModal").style.display="flex";
+document.body.classList.add("no-scroll");
 
 /* simulate payment delay */
 setTimeout(function(){
@@ -1710,6 +2370,7 @@ document.getElementById("processingModal").style.display="none";
 
 /* show success modal */
 document.getElementById("donationSuccessModal").style.display="flex";
+document.body.classList.add("no-scroll");
 
 },2000);
 
@@ -1724,7 +2385,7 @@ alert("Invalid OTP");
 function closeDonationSuccess(){
 
 document.getElementById("donationSuccessModal").style.display="none";
-
+document.body.classList.remove("no-scroll");
 }
 
 function confirmDonation(){
@@ -1737,7 +2398,17 @@ let posts = JSON.parse(localStorage.getItem("posts")) || [];
 
 posts[donatePostIndex].donations += amount;
 
+/* track helped posts */
+if(!helpedPosts.includes(donatePostIndex)){
+helpedPosts.push(donatePostIndex);
+localStorage.setItem("helpedPosts", JSON.stringify(helpedPosts));
+}
+
 localStorage.setItem("posts", JSON.stringify(posts));
+
+updatePostsHelped();
+
+updateDonationTotal();
 
 /* close modals */
 document.getElementById("gcashModal").style.display="none";
@@ -1794,6 +2465,26 @@ inputs[0].focus();
 
 startBankOTPTimer();
 
+updateDonationTotal();
+
+}
+
+function updateDonationTotal(){
+
+let posts = JSON.parse(localStorage.getItem("posts")) || [];
+
+let total = 0;
+
+posts.forEach(post=>{
+total += post.donations || 0;
+});
+
+let donationDisplay = document.getElementById("donationTotal");
+
+if(donationDisplay){
+donationDisplay.textContent = "₱" + total.toLocaleString();
+}
+
 }
 
 function startBankOTPTimer(){
@@ -1841,6 +2532,7 @@ paymentVerified = true;
 document.getElementById("bankModal").style.display="none";
 
 document.getElementById("processingModal").style.display="flex";
+document.body.classList.add("no-scroll");
 
 setTimeout(function(){
 
@@ -1849,6 +2541,7 @@ confirmDonation();
 document.getElementById("processingModal").style.display="none";
 
 document.getElementById("donationSuccessModal").style.display="flex";
+document.body.classList.add("no-scroll");
 
 },2000);
 
@@ -1861,7 +2554,7 @@ alert("Invalid OTP");
 }
 
 function closeBank(){
-
+document.body.classList.remove("no-scroll");
 /* close modal */
 document.getElementById("bankModal").style.display = "none";
 
@@ -1927,33 +2620,37 @@ setupBankOTPInputs();
 function closeQR(){
 
 document.getElementById("qrModal").style.display = "none";
+document.body.classList.remove("no-scroll");
 
 }
 //============================================================================================
 
 document.addEventListener("click", function(e){
 
-/* check if click is NOT inside post menu */
+/* close post menus */
 if(!e.target.closest(".post-menu")){
-
 document.querySelectorAll(".post-dropdown").forEach(menu=>{
 menu.style.display = "none";
 });
+}
 
+/* close comment menus */
+if(!e.target.closest(".comment-menu")){
+document.querySelectorAll(".comment-dropdown").forEach(menu=>{
+menu.style.display = "none";
+});
 }
 
 });
 
 document.addEventListener("click", function(e){
 
-if(e.target.classList.contains("profile-modal")){
-closeTopModal();
-}
-
+/* allow outside click close ONLY for comment modal */
 if(e.target.classList.contains("comment-modal")){
 closeTopModal();
 }
 
+/* allow outside click close ONLY for delete comment modal */
 if(e.target.classList.contains("delete-comment-modal")){
 closeTopModal();
 }
@@ -1963,7 +2660,16 @@ closeTopModal();
 document.addEventListener("keydown", function(e){
 
 if(e.key === "Escape"){
+
+let profile = document.getElementById("profileModal");
+
+if(profile.style.display === "flex" && isNewUser()){
+alert("Please complete your profile first.");
+return;
+}
+
 closeTopModal();
+
 }
 
 });

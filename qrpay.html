@@ -5,11 +5,13 @@
 <title>QRPH Payment</title>
 
 <style>
+
 body{
 font-family:Arial;
 text-align:center;
 padding-top:120px;
 background:#f3efe8;
+transition:background 0.3s,color 0.3s;
 }
 
 button{
@@ -20,7 +22,28 @@ color:white;
 border:none;
 border-radius:8px;
 cursor:pointer;
+transition:background 0.2s;
 }
+
+button:hover{
+background:#1858aa;
+}
+
+/* DARK MODE */
+
+body.dark{
+background:#0f172a;
+color:#f1f5f9;
+}
+
+body.dark button{
+background:#2563eb;
+}
+
+body.dark button:hover{
+background:#1d4ed8;
+}
+
 </style>
 
 </head>
@@ -33,6 +56,14 @@ cursor:pointer;
 <button onclick="payNow()">Pay</button>
 
 <script>
+
+/* load theme from settings */
+let theme = localStorage.getItem("theme");
+
+if(theme === "dark"){
+document.body.classList.add("dark");
+}
+
 function payNow(){
 window.location.href = "home.html?payment=success";
 }
