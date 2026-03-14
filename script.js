@@ -339,7 +339,8 @@ let params = new URLSearchParams(window.location.search);
 
 if(params.get("payment") === "success"){
 
-/* restore donation data */
+setTimeout(function(){
+
 donatePostIndex = parseInt(localStorage.getItem("donatePostIndex"));
 let savedAmount = localStorage.getItem("donateAmount");
 
@@ -348,25 +349,30 @@ document.getElementById("donateAmount").value = savedAmount;
 }
 
 /* show processing */
-document.getElementById("processingModal").style.display = "flex";
+let processing = document.getElementById("processingModal");
+
+if(processing){
+processing.style.display = "flex";
+}
 
 setTimeout(function(){
 
 paymentVerified = true;
 
-/* add donation */
 confirmDonation();
 
 /* hide processing */
-document.getElementById("processingModal").style.display = "none";
+processing.style.display = "none";
 
 /* show success */
 document.getElementById("donationSuccessModal").style.display = "flex";
 
-/* clean URL so refresh doesn't repeat payment */
+/* remove URL parameter */
 window.history.replaceState({}, document.title, "home.html");
 
 },2000);
+
+},300);
 
 }
 
@@ -1725,9 +1731,7 @@ function confirmDonation(){
 
 if(!paymentVerified) return;
 
-if(donatePostIndex === null) return;
-
-let amount = parseInt(localStorage.getItem("donateAmount"));
+let amount = parseInt(document.getElementById("donateAmount").value);
 
 let posts = JSON.parse(localStorage.getItem("posts")) || [];
 
