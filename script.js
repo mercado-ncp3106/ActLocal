@@ -1725,7 +1725,9 @@ function confirmDonation(){
 
 if(!paymentVerified) return;
 
-let amount = parseInt(document.getElementById("donateAmount").value);
+if(donatePostIndex === null) return;
+
+let amount = parseInt(localStorage.getItem("donateAmount"));
 
 let posts = JSON.parse(localStorage.getItem("posts")) || [];
 
