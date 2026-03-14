@@ -339,7 +339,27 @@ let params = new URLSearchParams(window.location.search);
 
 if(params.get("payment") === "success"){
 
+/* restore saved data */
+donatePostIndex = parseInt(localStorage.getItem("donatePostIndex"));
+document.getElementById("donateAmount").value = localStorage.getItem("donateAmount");
+
+/* show processing first */
+document.getElementById("processingModal").style.display = "flex";
+
+setTimeout(function(){
+
+paymentVerified = true;
+
+/* process donation */
+confirmDonation();
+
+/* hide processing */
+document.getElementById("processingModal").style.display = "none";
+
+/* show success */
 document.getElementById("donationSuccessModal").style.display = "flex";
+
+},2000);
 
 }
 
@@ -1574,7 +1594,13 @@ document.getElementById("donationSuccessModal").style.display = "none";
 }
 
 function goQR(){
+
+/* save donation info before leaving page */
+localStorage.setItem("donatePostIndex", donatePostIndex);
+localStorage.setItem("donateAmount", document.getElementById("donateAmount").value);
+
 window.location.href = "qrpay.html";
+
 }
 
 function generatePaymentOTP(){
