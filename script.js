@@ -1715,11 +1715,8 @@ img.style.transform =
 }
 
 function closeImageViewer(){
-
 document.getElementById("imageViewer").style.display = "none";
-
-document.body.classList.add("no-scroll");
-
+document.body.classList.remove("no-scroll");
 }
 
 function editComment(postIndex, commentIndex){
