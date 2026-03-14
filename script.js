@@ -78,8 +78,10 @@ localStorage.setItem("userAccount", JSON.stringify(user));
 
 alert("Account created successfully!");
 
-/* redirect to login page */
+/* redirect AFTER alert */
+setTimeout(function(){
 window.location.href = "index.html";
+}, 500);
 
 }
 
