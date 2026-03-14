@@ -554,10 +554,34 @@ let preview = document.getElementById("imagePreview");
 let uploadText = document.getElementById("uploadText");
 let removeBtn = document.getElementById("removeImageBtn");
 
-/* click upload box */
+if(uploadBox && imageInput){
+
 uploadBox.addEventListener("click", function(){
 imageInput.click();
 });
+
+imageInput.addEventListener("change", function(){
+
+let file = this.files[0];
+if(!file) return;
+
+let reader = new FileReader();
+
+reader.onload = function(e){
+
+preview.src = e.target.result;
+preview.style.display = "block";
+
+uploadText.style.display = "none";
+removeBtn.style.display = "block";
+
+};
+
+reader.readAsDataURL(file);
+
+});
+
+}
 
 /* image selected */
 imageInput.addEventListener("change", function(){
@@ -1394,19 +1418,24 @@ return;
 }
 
 //================================DONATION====================================================
-document.getElementById("cardNumber").addEventListener("input", function(e){
+let cardNumber = document.getElementById("cardNumber");
+
+if(cardNumber){
+cardNumber.addEventListener("input", function(e){
 
 let value = e.target.value.replace(/\D/g,"");
-
 value = value.substring(0,16);
-
 value = value.replace(/(.{4})/g,"$1 ").trim();
 
 e.target.value = value;
 
 });
+}
 
-document.getElementById("cardExpiry").addEventListener("input", function(e){
+let cardExpiry = document.getElementById("cardExpiry");
+
+if(cardExpiry){
+cardExpiry.addEventListener("input", function(e){
 
 let value = e.target.value.replace(/\D/g,"");
 
@@ -1421,16 +1450,20 @@ value = value.substring(0,2) + "/" + value.substring(2);
 e.target.value = value;
 
 });
+}
 
-document.getElementById("cardCVC").addEventListener("input", function(e){
+let cardCVC = document.getElementById("cardCVC");
+
+if(cardCVC){
+cardCVC.addEventListener("input", function(e){
 
 let value = e.target.value.replace(/\D/g,"");
-
 value = value.substring(0,3);
 
 e.target.value = value;
 
 });
+}
 
 function openDonate(index){
 
