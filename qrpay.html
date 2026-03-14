@@ -34,8 +34,18 @@ cursor:pointer;
 
 <script>
 function payNow(){
+
+/* simulate payment processing on QR page */
+document.body.innerHTML = "<h2 style='text-align:center;margin-top:120px;font-family:Arial;'>Processing Payment...</h2>";
+
+setTimeout(function(){
+
 window.location.href = "home.html?payment=success";
+
+},1500);
+
 }
+</script>
 
 </script>
 
