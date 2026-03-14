@@ -339,13 +339,27 @@ let params = new URLSearchParams(window.location.search);
 
 if(params.get("payment") === "success"){
 
+/* show processing */
+document.getElementById("processingModal").style.display = "flex";
+
+setTimeout(function(){
+
+document.getElementById("processingModal").style.display = "none";
+
+/* mark payment verified */
+paymentVerified = true;
+
+/* add donation */
+confirmDonation();
+
+/* show success */
 document.getElementById("donationSuccessModal").style.display = "flex";
+
+},2000);
 
 }
 
 setupImageUpload();
-
-};
 
 // OTP
 function generateOTP(){
