@@ -1573,6 +1573,10 @@ document.getElementById("donationSuccessModal").style.display = "none";
 
 }
 
+function goQR(){
+window.location.href = "qrpay.html";
+}
+
 function generatePaymentOTP(){
 
 let phone = document.getElementById("gcashPhone").value.trim();
