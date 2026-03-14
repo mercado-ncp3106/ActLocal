@@ -660,13 +660,44 @@ padding-top:10px;
 }
 
 .comment-item{
-background:#f0f2f5;
-padding:8px 12px;
-border-radius:12px;
-margin-bottom:6px;
-font-size:14px;
+display:flex;
+align-items:flex-start;
+gap:8px;
+margin-top:6px;
 }
 
+
+.comment-item .comment-avatar{
+width:28px;
+height:28px;
+border-radius:50%;
+background:#c8d9f1;
+display:flex;
+align-items:center;
+justify-content:center;
+font-weight:bold;
+overflow:hidden;
+}
+
+.comment-item .comment-avatar img{
+width:100%;
+height:100%;
+object-fit:cover;
+}
+
+.comment-item .comment-bubble{
+background:#f0f2f5;
+border-radius:16px;
+padding:6px 10px;
+font-size:13px;
+max-width:85%;
+}
+
+.comment-item strong{
+display:block;
+font-size:12px;
+margin-bottom:2px;
+}
 /* comment input */
 
 .comment-input-box{
@@ -677,13 +708,14 @@ margin-top:8px;
 }
 
 .comment-input-box input{
-flex:1;
+width:100%;
 border:none;
 background:#f0f2f5;
-padding:10px;
+padding:10px 14px;
 border-radius:20px;
 outline:none;
 font-size:14px;
+height:34px;
 }
 
 .comment-input-box button{
@@ -740,21 +772,78 @@ align-items:center;
 }
 
 .comment-heart svg{
-width:16px;
-height:16px;
-transition:0.2s;
+width:14px;
+height:14px;
 }
 
 .comment-heart.comment-liked svg{
-stroke:#e63946;
 fill:#e63946;
+stroke:#e63946;
 animation:heartPop 0.25s ease;
+}
+
+.time{
+color:#888;
+font-size:12px;
+white-space:nowrap;
+}
+
+.comment-like-count{
+font-size:12px;
+color:#65676b;
 }
 
 @keyframes heartPop{
 0%{transform:scale(1);}
 50%{transform:scale(1.3);}
 100%{transform:scale(1);}
+}
+
+/* POST MENU */
+
+.post-menu{
+position:relative;
+}
+
+.post-dots{
+cursor:pointer;
+display:flex;
+align-items:center;
+}
+
+.post-dots svg{
+width:20px;
+height:20px;
+}
+
+.post-dropdown{
+position:absolute;
+right:0;
+top:24px;
+background:white;
+border-radius:8px;
+box-shadow:0 4px 12px rgba(0,0,0,0.15);
+display:none;
+min-width:150px;
+z-index:20;
+}
+
+.post-dropdown div{
+padding:10px 12px;
+cursor:pointer;
+display:flex;
+align-items:center;
+gap:8px;
+font-size:14px;
+}
+
+.post-dropdown div:hover{
+background:#f3f3f3;
+}
+
+.post-dropdown svg{
+width:16px;
+height:16px;
 }
 
 .modal-header{
@@ -834,8 +923,25 @@ font-size:15px;
 
 .modal-post-image{
 width:100%;
+max-height:350px;
+object-fit:cover;
 border-radius:8px;
 margin-top:10px;
+display:block;
+}
+
+.post-image{
+cursor:pointer;
+transition:0.2s;
+}
+
+.post-image:hover{
+opacity:0.9;
+}
+
+.no-scroll{
+overflow:hidden;
+height:100vh;
 }
 
 .modal-post-title{
@@ -914,6 +1020,7 @@ align-items:center;
 justify-content:center;
 font-weight:bold;
 overflow:hidden;
+flex-shrink:0;
 }
 
 .comment-user-avatar img{
@@ -928,22 +1035,12 @@ object-fit:cover;
 flex:1;
 }
 
-.comment-input-box input{
-width:100%;
-border:none;
-background:#f0f2f5;
-padding:10px 14px;
-border-radius:20px;
-outline:none;
-font-size:14px;
-}
-
 .comment-meta{
 margin-top:4px;
 font-size:12px;
 color:#65676b;
 display:flex;
-gap:10px;
+gap:8px;
 align-items:center;
 }
 
@@ -963,6 +1060,147 @@ color:#1f6ed4;
 .comment-like-count{
 font-size:12px;
 color:#65676b;
+}
+
+.view-more-comments{
+font-size:13px;
+color:#65676b;
+cursor:pointer;
+margin-top:5px;
+}
+
+.view-more-comments:hover{
+text-decoration:underline;
+}
+
+.comment-delete{
+cursor:pointer;
+margin-left:8px;
+color:#888;
+}
+
+.comment-delete:hover{
+color:#e53935;
+}
+
+/* COMMENT MENU */
+
+.comment-menu{
+position:relative;
+margin-left:6px;
+}
+
+.comment-dots{
+cursor:pointer;
+display:flex;
+align-items:center;
+}
+
+.comment-dots svg{
+width:18px;
+height:18px;
+color:#65676b;
+}
+
+.comment-dropdown{
+position:absolute;
+right:0;
+top:22px;
+background:white;
+border-radius:8px;
+box-shadow:0 4px 12px rgba(0,0,0,0.15);
+display:none;
+min-width:180px;
+z-index:20;
+}
+
+.comment-dropdown div{
+padding:10px 12px;
+cursor:pointer;
+display:flex;
+align-items:center;
+gap:8px;
+font-size:14px;
+white-space:nowrap; /* prevents line break */
+}
+
+.comment-dropdown div:hover{
+background:#f3f3f3;
+}
+
+.comment-dropdown svg{
+width:16px;
+height:16px;
+}
+
+.edit-comment-input{
+width:100%;
+border:none;
+background:#fff;
+border-radius:6px;
+padding:6px 8px;
+font-size:14px;
+outline:2px solid #1f6ed4;
+}
+
+/* DELETE COMMENT MODAL */
+
+.delete-comment-modal{
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.6);
+justify-content:center;
+align-items:center;
+z-index:1000;
+}
+
+.delete-comment-box{
+background:white;
+padding:25px;
+border-radius:12px;
+width:320px;
+text-align:center;
+}
+
+.delete-comment-box h3{
+margin-bottom:10px;
+}
+
+.delete-comment-box p{
+font-size:14px;
+color:#555;
+margin-bottom:20px;
+}
+
+.delete-comment-actions{
+display:flex;
+justify-content:center;
+gap:10px;
+}
+
+.cancel-delete{
+background:#f3f3f3;
+border:1px solid #ddd;
+padding:8px 16px;
+border-radius:6px;
+cursor:pointer;
+}
+
+.confirm-delete{
+background:#e53935;
+color:white;
+border:none;
+padding:8px 16px;
+border-radius:6px;
+cursor:pointer;
+}
+
+.confirm-delete:hover{
+background:#c62828;
 }
 
 .post-actions svg{
@@ -1464,6 +1702,132 @@ padding:6px 14px;
 border-radius:6px;
 color:black;
 font-weight:500;
+}
+
+/* Payment */
+.modern-modal{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.6);
+display:none;
+justify-content:center;
+align-items:center;
+z-index:999;
+}
+
+.modern-modal-box{
+background:white;
+padding:28px;
+border-radius:14px;
+width:380px;
+max-width:90%;
+box-shadow:0 10px 30px rgba(0,0,0,0.2);
+}
+
+.modern-input{
+width:100%;
+padding:12px;
+border:1px solid #ddd;
+border-radius:8px;
+margin-top:10px;
+margin-bottom:15px;
+}
+
+.modern-actions{
+display:flex;
+justify-content:flex-end;
+gap:10px;
+}
+
+.btn-primary{
+background:#1f6ed4;
+color:white;
+border:none;
+padding:10px 16px;
+border-radius:8px;
+cursor:pointer;
+}
+
+.btn-light{
+background:#f3f3f3;
+border:none;
+padding:10px 16px;
+border-radius:8px;
+cursor:pointer;
+}
+
+.payment-grid{
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:12px;
+margin-top:20px;
+}
+
+.payment-card{
+border:1px solid #eee;
+border-radius:10px;
+padding:16px;
+text-align:center;
+cursor:pointer;
+transition:0.2s;
+}
+
+.payment-card:hover{
+background:#f8fbff;
+border-color:#1f6ed4;
+}
+
+.payment-otp-input{
+width:40px;
+height:45px;
+text-align:center;
+font-size:18px;
+border:1px solid #ddd;
+border-radius:6px;
+}
+
+.payment-otp-input:focus{
+border-color:#1f6ed4;
+outline:none;
+}
+
+.processing-box{
+text-align:center;
+}
+
+.loader{
+width:40px;
+height:40px;
+border:4px solid #ddd;
+border-top:4px solid #1f6ed4;
+border-radius:50%;
+margin:auto;
+margin-bottom:15px;
+animation:spin 1s linear infinite;
+}
+
+@keyframes spin{
+0%{transform:rotate(0deg);}
+100%{transform:rotate(360deg);}
+}
+
+.success-box{
+text-align:center;
+}
+
+.success-icon{
+font-size:40px;
+color:#2ecc71;
+margin-bottom:10px;
+}
+
+.modern-actions{
+display:flex;
+justify-content:flex-start;
+margin-top:10px;
 }
 
 /* Mobile */

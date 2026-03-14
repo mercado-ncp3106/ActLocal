@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>QRPH Payment</title>
+
+<style>
+body{
+font-family:Arial;
+text-align:center;
+padding-top:120px;
+background:#f3efe8;
+}
+
+button{
+padding:12px 20px;
+font-size:16px;
+background:#1f6ed4;
+color:white;
+border:none;
+border-radius:8px;
+cursor:pointer;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>QRPH Payment</h2>
+<p>Confirm your payment</p>
+
+<button onclick="payNow()">Pay</button>
+
+<script>
+
+function payNow(){
+
+window.location.href = "home.html?payment=success";
+
+}
+
+</script>
+
+</body>
+</html>

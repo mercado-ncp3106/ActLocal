@@ -3,6 +3,15 @@ let phoneVerified = false;
 let otpTimer;
 let otpSeconds = 60;
 let currentPostIndex = null;
+let editingPostIndex = null;
+let paymentVerified = false;
+let donatePostIndex = null;
+let paymentOTP = "";
+let paymentOtpTimer;
+let paymentOtpSeconds = 60;
+let bankOTP = "";
+let bankOtpTimer;
+let bankOtpSeconds = 60;
 //=====================================================
 // LOGIN
 function login(event){
@@ -54,6 +63,7 @@ alert("Account created successfully!");
 // PROFILE MODAL
 function openProfile(){
 document.getElementById("profileModal").style.display = "flex";
+document.body.classList.add("no-scroll");
 }
 
 function closeProfile(){
@@ -65,12 +75,12 @@ document.getElementById("profileModal").style.display = "none";
 // SETTINGS MODAL
 function openSettings(){
 document.getElementById("settingsModal").style.display = "flex";
+document.body.classList.add("no-scroll");
 }
 
 function closeSettings(){
 document.getElementById("settingsModal").style.display = "none";
 }
-
 
 //=====================================================
 // SAVE PROFILE
@@ -298,6 +308,14 @@ document.getElementById("imageUpload").click();
 };
 }
 
+let params = new URLSearchParams(window.location.search);
+
+if(params.get("payment") === "success"){
+
+document.getElementById("donationSuccessModal").style.display = "flex";
+
+}
+
 setupImageUpload();
 
 };
@@ -374,6 +392,36 @@ inputs[index - 1].focus();
 }
 setupOTPInputs();
 
+function setupPaymentOTPInputs(){
+
+let inputs = document.querySelectorAll(".payment-otp-input");
+
+inputs.forEach((input,index)=>{
+
+input.addEventListener("input",function(){
+
+this.value = this.value.replace(/[^0-9]/g,"");
+
+if(this.value.length === 1 && index < inputs.length - 1){
+inputs[index + 1].focus();
+}
+
+});
+
+input.addEventListener("keydown",function(e){
+
+if(e.key === "Backspace" && this.value === "" && index > 0){
+inputs[index - 1].focus();
+}
+
+});
+
+});
+
+}
+
+setupPaymentOTPInputs();
+
 function verifyOTP(){
 
 let inputs = document.querySelectorAll(".otp-input");
@@ -445,6 +493,7 @@ generatedOTP = "";
 // Post
 function openPost(){
 document.getElementById("postModal").style.display="flex";
+document.body.classList.add("no-scroll");
 }
 
 function closePost(){
@@ -560,6 +609,32 @@ donations:0,
 time: Date.now()
 };
 
+if(editingPostIndex !== null){
+
+let posts = JSON.parse(localStorage.getItem("posts")) || [];
+
+/* keep original time */
+post.time = posts[editingPostIndex].time;
+
+/* keep other data */
+post.likes = posts[editingPostIndex].likes;
+post.liked = posts[editingPostIndex].liked;
+post.comments = posts[editingPostIndex].comments;
+post.donations = posts[editingPostIndex].donations;
+
+/* update post */
+posts[editingPostIndex] = post;
+
+localStorage.setItem("posts", JSON.stringify(posts));
+
+editingPostIndex = null;
+
+renderPosts();
+closePost();
+return;
+
+}
+
 let posts = JSON.parse(localStorage.getItem("posts")) || [];
 
 posts.unshift(post);
@@ -617,7 +692,9 @@ let profile = post.profileImage
 ? `<img src="${post.profileImage}" class="profile-avatar-small">`
 : `<div class="profile-avatar-small">${post.name.charAt(0)}</div>`;
 
-let imageHTML = post.image ? `<img src="${post.image}">` : "";
+let imageHTML = post.image 
+? `<img src="${post.image}" class="post-image" onclick="openCommentModal(${index})">`
+: "";
 
 let postHTML = `
 <div class="post">
@@ -659,39 +736,105 @@ ${post.comments.length} comments
 <span>Like</span>
 </button>
 
-<button onclick="toggleComments(${index})">
+<button onclick="openCommentModal(${index})">
 <i data-lucide="message-circle"></i> Comment
 </button>
 
-<button onclick="donatePost(${index})" class="donate-btn">
+<button onclick="openDonate(${index})" class="donate-btn">
 <i data-lucide="banknote"></i> Donate
 </button>
 
-<button onclick="deletePost(${index})" class="delete-btn">
-<i data-lucide="trash-2"></i> Delete
-</button>
+<div class="post-menu">
+
+<span class="post-dots" onclick="togglePostMenu(this)">
+<i data-lucide="more-horizontal"></i>
+</span>
+
+<div class="post-dropdown">
+
+<div onclick="editPost(${index}); closePostMenu(this)">
+<i data-lucide="edit-3"></i>
+<span>Edit Post</span>
+</div>
+
+<div onclick="deletePost(${index}); closePostMenu(this)">
+<i data-lucide="trash-2"></i>
+<span>Delete Post</span>
+</div>
 
 </div>
 
-<div class="comment-section" id="comments-${index}" style="display:none;">
+</div>
+
+</div>
+
+<div class="comment-section">
 
 <div class="comment-list">
-${post.comments.map(c => `<div class="comment-item">${typeof c === "string" ? c : c.text}</div>`).join("")}
+
+${post.comments.slice(-2).map((c,i,arr) => {
+
+let realIndex = post.comments.length - arr.length + i;
+
+if(typeof c === "string"){
+c = {
+name: post.name,
+text: c,
+time: Date.now(),
+likes:0,
+liked:false
+};
+}
+
+let avatar = c.avatar
+? `<img src="${c.avatar}">`
+: c.name.charAt(0);
+
+return `
+<div class="comment-item">
+
+<div class="comment-avatar">
+${avatar}
 </div>
 
-<div class="comment-input-box">
+<div class="comment-bubble">
 
-<input 
-type="text" 
-placeholder="Write a comment..." 
-onkeypress="if(event.key==='Enter'){addComment(${index}, this)}"
-/>
+<strong>${c.name}</strong>
 
-<button onclick="addComment(${index}, this.previousElementSibling)">
-<i data-lucide="send"></i>
-</button>
+<div class="comment-text">${c.text}</div>
+
+<div class="comment-meta">
+
+<span class="comment-time">
+${timeAgo(c.time)}
+${c.edited ? " · Edited" : ""}
+</span>
+
+<span class="comment-heart ${c.liked ? "comment-liked" : ""}" 
+onclick="likeComment(${index},${realIndex})">
+<i data-lucide="heart"></i>
+</span>
+
+<span class="comment-like-count">
+${c.likes > 0 ? c.likes : ""}
+</span>
 
 </div>
+
+</div>
+
+</div>
+`;
+
+}).join("")}
+
+</div>
+
+${post.comments.length > 2 ? `
+<div class="view-more-comments" onclick="openCommentModal(${index})">
+View all ${post.comments.length} comments
+</div>
+` : ""}
 
 </div>
 
@@ -703,6 +846,64 @@ feed.insertAdjacentHTML("beforeend",postHTML);
 });
 
 lucide.createIcons();
+}
+
+function closePostMenu(el){
+
+let menu = el.closest(".post-dropdown");
+
+if(menu){
+menu.style.display = "none";
+}
+
+}
+
+function togglePostMenu(el){
+
+let menu = el.parentElement.querySelector(".post-dropdown");
+
+/* close other menus */
+document.querySelectorAll(".post-dropdown").forEach(m=>{
+if(m !== menu) m.style.display="none";
+});
+
+/* toggle this menu */
+menu.style.display = menu.style.display === "block" ? "none" : "block";
+
+}
+
+function editPost(index){
+
+let posts = JSON.parse(localStorage.getItem("posts")) || [];
+
+let post = posts[index];
+
+editingPostIndex = index;
+
+/* open modal */
+openPost();
+
+/* fill fields */
+document.getElementById("postTitle").value = post.title;
+document.getElementById("postDescription").value = post.description;
+document.getElementById("postCategory").value = post.category;
+document.getElementById("selectedCategory").textContent = post.category;
+
+/* load image */
+if(post.image){
+
+let preview = document.getElementById("imagePreview");
+let uploadText = document.getElementById("uploadText");
+let removeBtn = document.getElementById("removeImageBtn");
+
+preview.src = post.image;
+preview.style.display = "block";
+
+uploadText.style.display = "none";
+removeBtn.style.display = "block";
+
+}
+
 }
 
 function toggleComments(index){
@@ -769,17 +970,44 @@ ${avatar}
 
 <strong>${c.name}</strong>
 
-<div class="comment-text">${c.text}</div>
+<div class="comment-text" id="comment-text-${index}-${i}">
+${c.text}
+</div>
 
 <div class="comment-meta">
 
-<span class="comment-time">${timeAgo(c.time)}</span>
+<span class="comment-time">
+${timeAgo(c.time)}
+${c.edited ? ` · Edited (${timeAgo(c.editedTime)})` : ""}
+</span>
 
 <span class="comment-heart ${likeClass}" onclick="likeComment(${index},${i})">
 <i data-lucide="heart"></i>
 </span>
 
 <span class="comment-like-count">${c.likes > 0 ? c.likes : ""}</span>
+
+<div class="comment-menu">
+
+<span class="comment-dots" onclick="toggleCommentMenu(this)">
+<i data-lucide="more-horizontal"></i>
+</span>
+
+<div class="comment-dropdown">
+
+<div onclick="editComment(${index},${i})">
+<i data-lucide="edit-3"></i>
+<span>Edit Comment</span>
+</div>
+
+<div onclick="deleteComment(${index},${i})">
+<i data-lucide="trash-2"></i>
+<span>Delete Comment</span>
+</div>
+
+</div>
+
+</div>
 
 </div>
 
@@ -838,6 +1066,82 @@ lucide.createIcons();
 
 }
 
+function editComment(postIndex, commentIndex){
+
+let posts = JSON.parse(localStorage.getItem("posts")) || [];
+
+let comment = posts[postIndex].comments[commentIndex];
+
+let textElement = document.getElementById(`comment-text-${postIndex}-${commentIndex}`);
+
+if(!textElement) return;
+
+let originalText = comment.text;
+
+/* replace comment with input */
+textElement.innerHTML = `
+<input 
+type="text" 
+class="edit-comment-input"
+value="${originalText}"
+id="editInput-${postIndex}-${commentIndex}"
+>
+`;
+
+let input = document.getElementById(`editInput-${postIndex}-${commentIndex}`);
+
+input.focus();
+input.select();
+
+/* save on ENTER */
+input.addEventListener("keypress", function(e){
+
+if(e.key === "Enter"){
+
+let newText = this.value.trim();
+
+if(newText === "") return;
+
+posts[postIndex].comments[commentIndex].text = newText;
+posts[postIndex].comments[commentIndex].edited = true;
+posts[postIndex].comments[commentIndex].editedTime = Date.now();
+
+localStorage.setItem("posts", JSON.stringify(posts));
+
+renderPosts();
+openCommentModal(postIndex);
+
+}
+
+});
+
+/* cancel on ESC */
+input.addEventListener("keydown", function(e){
+
+if(e.key === "Escape"){
+
+textElement.innerHTML = originalText;
+
+}
+
+});
+
+}
+
+function toggleCommentMenu(el){
+
+let menu = el.parentElement.querySelector(".comment-dropdown");
+
+/* close other menus */
+document.querySelectorAll(".comment-dropdown").forEach(m=>{
+if(m !== menu) m.style.display="none";
+});
+
+/* toggle this menu */
+menu.style.display = menu.style.display === "block" ? "none" : "block";
+
+}
+
 function likeComment(postIndex,commentIndex){
 
 let posts = JSON.parse(localStorage.getItem("posts")) || [];
@@ -846,15 +1150,58 @@ let comment = posts[postIndex].comments[commentIndex];
 
 if(comment.liked){
 comment.likes = Math.max(0, comment.likes-1);
-comment.liked=false;
+comment.liked = false;
 }else{
 comment.likes++;
-comment.liked=true;
+comment.liked = true;
 }
 
 localStorage.setItem("posts", JSON.stringify(posts));
 
+/* update feed */
+renderPosts();
+
+/* update modal only if open */
+let modal = document.getElementById("commentModal");
+
+if(modal && modal.style.display === "flex"){
 openCommentModal(postIndex);
+}
+
+}
+
+
+let deletePostIndex = null;
+let deleteCommentIndex = null;
+
+function deleteComment(postIndex,commentIndex){
+
+deletePostIndex = postIndex;
+deleteCommentIndex = commentIndex;
+
+document.getElementById("deleteCommentModal").style.display="flex";
+
+}
+
+function closeDeleteModal(){
+
+document.getElementById("deleteCommentModal").style.display="none";
+
+}
+
+function confirmDeleteComment(){
+
+let posts = JSON.parse(localStorage.getItem("posts")) || [];
+
+posts[deletePostIndex].comments.splice(deleteCommentIndex,1);
+
+localStorage.setItem("posts", JSON.stringify(posts));
+
+closeDeleteModal();
+
+renderPosts();
+
+openCommentModal(deletePostIndex);
 
 }
 
@@ -928,23 +1275,10 @@ localStorage.setItem("posts", JSON.stringify(posts));
 
 input.value="";
 
+renderPosts();
+
 openCommentModal(index); // refresh modal so new comment appears
 
-}
-
-function donatePost(index){
-
-let amount = prompt("Enter donation amount (₱)");
-
-if(!amount) return;
-
-let posts = JSON.parse(localStorage.getItem("posts"));
-
-posts[index].donations += parseInt(amount);
-
-localStorage.setItem("posts", JSON.stringify(posts));
-
-renderPosts();
 
 }
 
@@ -967,3 +1301,566 @@ let days = Math.floor(hours/24);
 return days+" days ago";
 
 }
+
+function closeAllModals(){
+
+let modals = [
+"profileModal",
+"settingsModal",
+"postModal",
+"commentModal",
+"deleteCommentModal"
+];
+
+modals.forEach(id => {
+
+let modal = document.getElementById(id);
+
+if(modal){
+modal.style.display = "none";
+}
+
+});
+
+document.body.classList.remove("no-scroll");
+
+}
+
+function closeTopModal(){
+
+let settings = document.getElementById("settingsModal");
+let comment = document.getElementById("commentModal");
+let post = document.getElementById("postModal");
+let deleteComment = document.getElementById("deleteCommentModal");
+let profile = document.getElementById("profileModal");
+
+/* close highest modal first */
+
+if(settings && settings.style.display === "flex"){
+settings.style.display = "none";
+return;
+}
+
+if(deleteComment && deleteComment.style.display === "flex"){
+deleteComment.style.display = "none";
+return;
+}
+
+if(comment && comment.style.display === "flex"){
+comment.style.display = "none";
+document.body.classList.remove("no-scroll");
+return;
+}
+
+if(post && post.style.display === "flex"){
+post.style.display = "none";
+document.body.classList.remove("no-scroll");
+return;
+}
+
+if(profile && profile.style.display === "flex"){
+profile.style.display = "none";
+document.body.classList.remove("no-scroll");
+return;
+}
+
+}
+
+//================================DONATION====================================================
+document.getElementById("cardNumber").addEventListener("input", function(e){
+
+let value = e.target.value.replace(/\D/g,"");
+
+value = value.substring(0,16);
+
+value = value.replace(/(.{4})/g,"$1 ").trim();
+
+e.target.value = value;
+
+});
+
+document.getElementById("cardExpiry").addEventListener("input", function(e){
+
+let value = e.target.value.replace(/\D/g,"");
+
+if(value.length > 4){
+value = value.substring(0,4);
+}
+
+if(value.length >= 3){
+value = value.substring(0,2) + "/" + value.substring(2);
+}
+
+e.target.value = value;
+
+});
+
+document.getElementById("cardCVC").addEventListener("input", function(e){
+
+let value = e.target.value.replace(/\D/g,"");
+
+value = value.substring(0,3);
+
+e.target.value = value;
+
+});
+
+function openDonate(index){
+
+donatePostIndex = index;
+
+document.getElementById("donateAmount").value = "";
+
+document.getElementById("donateModal").style.display = "flex";
+
+}
+
+function closeDonate(){
+
+document.getElementById("donateModal").style.display = "none";
+
+}
+
+function goPayment(){
+
+let amount = document.getElementById("donateAmount").value;
+
+if(!amount || amount <= 0){
+return;
+}
+
+document.getElementById("donateModal").style.display = "none";
+
+document.getElementById("paymentModal").style.display = "flex";
+
+}
+
+function closePayment(){
+
+document.getElementById("paymentModal").style.display = "none";
+
+}
+
+function openGCash(){
+
+document.getElementById("paymentModal").style.display="none";
+document.getElementById("gcashModal").style.display="flex";
+
+/* reset phone */
+document.getElementById("gcashPhone").value="";
+
+/* hide OTP section */
+document.getElementById("paymentOtpSection").style.display="none";
+
+/* reset OTP boxes */
+document.querySelectorAll(".payment-otp-input").forEach(i=>i.value="");
+
+/* reset timer */
+clearInterval(paymentOtpTimer);
+paymentOtpSeconds = 60;
+paymentOTP = "";
+paymentVerified = false;
+
+}
+
+function closeGCash(){
+
+document.getElementById("gcashModal").style.display="none";
+
+/* reset everything */
+document.getElementById("gcashPhone").value="";
+document.getElementById("paymentOtpSection").style.display="none";
+document.getElementById("gcashCancelInitial").style.display="block";
+document.querySelectorAll(".payment-otp-input").forEach(i=>i.value="");
+
+clearInterval(paymentOtpTimer);
+
+paymentOTP="";
+paymentVerified=false;
+paymentOtpSeconds=60;
+
+}
+
+function openMaya(){
+
+openGCash();
+
+document.querySelector("#gcashModal h2").textContent = "Maya Payment";
+
+}
+
+function openBank(){
+
+document.getElementById("paymentModal").style.display="none";
+document.getElementById("bankModal").style.display="flex";
+
+/* reset cancel button */
+document.getElementById("bankCancelBtn").style.display="inline-block";
+
+/* hide OTP section again */
+document.getElementById("bankOtpSection").style.display="none";
+
+}
+
+function openQR(){
+
+document.getElementById("paymentModal").style.display = "none";
+document.getElementById("qrModal").style.display = "flex";
+
+/* reset QR state */
+document.getElementById("processingModal").style.display = "none";
+document.getElementById("donationSuccessModal").style.display = "none";
+
+}
+
+function generatePaymentOTP(){
+
+let phone = document.getElementById("gcashPhone").value.trim();
+
+let phonePattern = /^09\d{9}$/;
+
+if(!phonePattern.test(phone)){
+alert("Enter valid phone number like 09123456789");
+return;
+}
+
+/* prevent resend before timer expires */
+if(paymentOtpSeconds > 0 && paymentOTP !== ""){
+alert("OTP already sent. Please wait for it to expire.");
+return;
+}
+
+paymentOTP = Math.floor(100000 + Math.random()*900000).toString();
+
+alert("OTP sent to " + phone + "\nCode: " + paymentOTP);
+
+document.getElementById("paymentOtpSection").style.display="block";
+
+document.getElementById("gcashCancelInitial").style.display="none";
+
+/* clear OTP boxes */
+let inputs = document.querySelectorAll(".payment-otp-input");
+
+inputs.forEach(i => i.value="");
+
+inputs[0].focus();
+
+startPaymentOTPTimer();
+
+}
+
+function startPaymentOTPTimer(){
+
+clearInterval(paymentOtpTimer);
+
+paymentOtpSeconds = 60;
+
+let timer = document.getElementById("paymentOtpTimer");
+
+paymentOtpTimer = setInterval(function(){
+
+timer.textContent = "OTP expires in " + paymentOtpSeconds + " seconds";
+
+paymentOtpSeconds--;
+
+if(paymentOtpSeconds < 0){
+
+clearInterval(paymentOtpTimer);
+
+timer.textContent = "OTP expired. Click resend.";
+
+paymentOTP = "";
+
+}
+
+},1000);
+
+}
+
+function verifyPaymentOTP(){
+
+let inputs = document.querySelectorAll(".payment-otp-input");
+
+let userOTP = "";
+
+inputs.forEach(input=>{
+userOTP += input.value;
+});
+
+if(userOTP === paymentOTP){
+
+paymentVerified = true;
+
+/* hide gcash modal */
+document.getElementById("gcashModal").style.display="none";
+
+/* show processing */
+document.getElementById("processingModal").style.display="flex";
+
+/* simulate payment delay */
+setTimeout(function(){
+
+confirmDonation();
+
+/* hide processing */
+document.getElementById("processingModal").style.display="none";
+
+/* show success modal */
+document.getElementById("donationSuccessModal").style.display="flex";
+
+},2000);
+
+}else{
+
+alert("Invalid OTP");
+
+}
+
+}
+
+function closeDonationSuccess(){
+
+document.getElementById("donationSuccessModal").style.display="none";
+
+}
+
+function confirmDonation(){
+
+if(!paymentVerified) return;
+
+let amount = parseInt(document.getElementById("donateAmount").value);
+
+let posts = JSON.parse(localStorage.getItem("posts")) || [];
+
+posts[donatePostIndex].donations += amount;
+
+localStorage.setItem("posts", JSON.stringify(posts));
+
+/* close modals */
+document.getElementById("gcashModal").style.display="none";
+document.getElementById("bankModal").style.display="none";
+document.getElementById("qrModal").style.display="none";
+
+/* reset bank fields */
+document.getElementById("cardNumber").value="";
+document.getElementById("cardExpiry").value="";
+document.getElementById("cardCVC").value="";
+document.getElementById("bankOtpSection").style.display="none";
+
+document.querySelectorAll(".otp-input").forEach(i=>i.value="");
+
+clearInterval(bankOtpTimer);
+bankOTP="";
+bankOtpSeconds=60;
+
+/* update feed */
+renderPosts();
+
+/* reset state */
+paymentVerified = false;
+
+/* reset gcash too */
+closeGCash();
+
+document.getElementById("paymentModal").style.display="none";
+
+}
+
+function generateBankOTP(){
+
+if(bankOtpSeconds > 0 && bankOTP !== ""){
+alert("OTP already sent. Please wait for it to expire.");
+return;
+}
+
+bankOTP = Math.floor(100000 + Math.random()*900000).toString();
+
+alert("Bank OTP: " + bankOTP);
+
+/* show OTP section */
+document.getElementById("bankOtpSection").style.display = "block";
+
+/* hide cancel button only */
+document.getElementById("bankCancelBtn").style.display = "none";
+
+let inputs = document.querySelectorAll(".otp-input");
+
+inputs.forEach(i => i.value = "");
+
+inputs[0].focus();
+
+startBankOTPTimer();
+
+}
+
+function startBankOTPTimer(){
+
+clearInterval(bankOtpTimer);
+
+bankOtpSeconds = 60;
+
+let timer = document.getElementById("bankOtpTimer");
+
+bankOtpTimer = setInterval(function(){
+
+timer.textContent = "OTP expires in " + bankOtpSeconds + " seconds";
+
+bankOtpSeconds--;
+
+if(bankOtpSeconds < 0){
+
+clearInterval(bankOtpTimer);
+
+timer.textContent = "OTP expired. Click resend.";
+
+bankOTP="";
+
+}
+
+},1000);
+
+}
+
+function verifyBankOTP(){
+
+let inputs = document.querySelectorAll(".otp-input");
+
+let userOTP="";
+
+inputs.forEach(input=>{
+userOTP+=input.value;
+});
+
+if(userOTP === bankOTP){
+
+paymentVerified = true;
+
+document.getElementById("bankModal").style.display="none";
+
+document.getElementById("processingModal").style.display="flex";
+
+setTimeout(function(){
+
+confirmDonation();
+
+document.getElementById("processingModal").style.display="none";
+
+document.getElementById("donationSuccessModal").style.display="flex";
+
+},2000);
+
+}else{
+
+alert("Invalid OTP");
+
+}
+
+}
+
+function closeBank(){
+
+/* close modal */
+document.getElementById("bankModal").style.display = "none";
+
+/* reset card fields */
+document.getElementById("cardNumber").value = "";
+document.getElementById("cardExpiry").value = "";
+document.getElementById("cardCVC").value = "";
+
+document.getElementById("bankCancelBtn").style.display = "inline-block";
+
+/* hide OTP section */
+document.getElementById("bankOtpSection").style.display = "none";
+
+/* clear OTP boxes */
+document.querySelectorAll(".otp-input").forEach(input=>{
+input.value = "";
+});
+
+/* reset timer */
+clearInterval(bankOtpTimer);
+
+bankOTP = "";
+bankOtpSeconds = 60;
+
+/* reset timer text */
+let timer = document.getElementById("bankOtpTimer");
+if(timer){
+timer.textContent = "";
+}
+
+}
+
+function setupBankOTPInputs(){
+
+let inputs = document.querySelectorAll(".otp-input");
+
+inputs.forEach((input,index)=>{
+
+input.addEventListener("input",function(){
+
+this.value = this.value.replace(/[^0-9]/g,"");
+
+if(this.value.length === 1 && index < inputs.length - 1){
+inputs[index+1].focus();
+}
+
+});
+
+input.addEventListener("keydown",function(e){
+
+if(e.key==="Backspace" && this.value==="" && index>0){
+inputs[index-1].focus();
+}
+
+});
+
+});
+
+}
+
+setupBankOTPInputs();
+
+function closeQR(){
+
+document.getElementById("qrModal").style.display = "none";
+
+}
+//============================================================================================
+
+document.addEventListener("click", function(e){
+
+/* check if click is NOT inside post menu */
+if(!e.target.closest(".post-menu")){
+
+document.querySelectorAll(".post-dropdown").forEach(menu=>{
+menu.style.display = "none";
+});
+
+}
+
+});
+
+document.addEventListener("click", function(e){
+
+if(e.target.classList.contains("profile-modal")){
+closeTopModal();
+}
+
+if(e.target.classList.contains("comment-modal")){
+closeTopModal();
+}
+
+if(e.target.classList.contains("delete-comment-modal")){
+closeTopModal();
+}
+
+});
+
+document.addEventListener("keydown", function(e){
+
+if(e.key === "Escape"){
+closeTopModal();
+}
+
+});

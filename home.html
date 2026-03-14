@@ -329,6 +329,288 @@ id="modalCommentInput"
 
 </div>
 
+<div id="deleteCommentModal" class="delete-comment-modal">
+
+<div class="delete-comment-box">
+
+<h3>Delete Comment?</h3>
+
+<p>Are you sure you want to delete this comment?</p>
+
+<div class="delete-comment-actions">
+
+<button onclick="closeDeleteModal()" class="cancel-delete">
+No
+</button>
+
+<button onclick="confirmDeleteComment()" class="confirm-delete">
+Delete
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+<div id="donateModal" class="modern-modal">
+
+<div class="modern-modal-box">
+
+<h2>Support This Cause</h2>
+
+<p class="modal-sub">Enter donation amount</p>
+
+<input 
+type="number" 
+id="donateAmount" 
+class="modern-input" 
+placeholder="₱100"
+>
+
+<div class="modern-actions">
+
+<button onclick="closeDonate()" class="btn-light">
+Cancel
+</button>
+
+<button onclick="goPayment()" class="btn-primary">
+Continue
+</button>
+
+</div>
+
+</div>
+</div>
+
+<div id="paymentModal" class="modern-modal">
+
+<div class="modern-modal-box">
+
+<h2>Select Payment Method</h2>
+
+<div class="payment-grid">
+
+<div class="payment-card" onclick="openGCash()">
+<span>GCash</span>
+</div>
+
+<div class="payment-card" onclick="openMaya()">
+<span>Maya</span>
+</div>
+
+<div class="payment-card" onclick="openBank()">
+<span>Bank Transfer</span>
+</div>
+
+<div class="payment-card" onclick="openQR()">
+<span>QRPH</span>
+</div>
+
+</div>
+
+</div>
+</div>
+
+<div id="gcashModal" class="modern-modal">
+
+<div class="modern-modal-box">
+
+<h2>GCash Payment</h2>
+
+<label>Cellphone Number</label>
+
+<div class="phone-row">
+<input type="tel" id="gcashPhone" class="modern-input" placeholder="09123456789" maxlength="11">
+<button onclick="generatePaymentOTP()" class="verify-btn">Verify Number</button>
+</div>
+
+<!-- Cancel button BEFORE verification -->
+<div class="modern-actions" id="gcashCancelInitial">
+<button onclick="closeGCash()" class="btn-light">
+Cancel
+</button>
+</div>
+
+<div class="otp-section" id="paymentOtpSection" style="display:none;">
+
+<label>Enter OTP</label>
+
+<div class="otp-boxes">
+<input class="payment-otp-input" maxlength="1">
+<input class="payment-otp-input" maxlength="1">
+<input class="payment-otp-input" maxlength="1">
+<input class="payment-otp-input" maxlength="1">
+<input class="payment-otp-input" maxlength="1">
+<input class="payment-otp-input" maxlength="1">
+</div>
+
+<p class="otp-timer" id="paymentOtpTimer"></p>
+
+<div class="otp-actions">
+
+<button onclick="closeGCash()" class="btn-light">
+Cancel
+</button>
+
+<button onclick="verifyPaymentOTP()" class="verify-otp">
+<i data-lucide="check-circle"></i>
+Verify OTP
+</button>
+
+<button onclick="generatePaymentOTP()" class="resend-otp">
+<i data-lucide="refresh-ccw"></i>
+Resend OTP
+</button>
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+<div id="bankModal" class="modern-modal">
+
+<div class="modern-modal-box">
+
+<h2>Bank Card Payment</h2>
+
+<input 
+class="modern-input" 
+type="text" 
+id="cardNumber"
+placeholder="1234 5678 9012 3456"
+maxlength="19"
+>
+
+<div class="card-row">
+
+<input 
+class="modern-input"
+type="text"
+id="cardExpiry"
+placeholder="MM/YY"
+maxlength="5"
+>
+
+<input 
+class="modern-input"
+type="text"
+id="cardCVC"
+placeholder="CVC"
+maxlength="3"
+>
+
+</div>
+
+<div class="modern-actions" id="bankInitialButtons">
+
+<button onclick="closeBank()" class="btn-light" id="bankCancelBtn">
+Cancel
+</button>
+
+<button onclick="generateBankOTP()" class="btn-primary">
+Verify Payment
+</button>
+
+</div>
+
+<div class="otp-section" id="bankOtpSection" style="display:none;">
+
+<label>Enter OTP</label>
+
+<div class="otp-boxes">
+<input class="otp-input" maxlength="1">
+<input class="otp-input" maxlength="1">
+<input class="otp-input" maxlength="1">
+<input class="otp-input" maxlength="1">
+<input class="otp-input" maxlength="1">
+<input class="otp-input" maxlength="1">
+</div>
+
+<p class="otp-timer" id="bankOtpTimer"></p>
+
+<div class="otp-actions">
+
+<button onclick="closeBank()" class="cancel-delete">
+Cancel
+</button>
+
+<button onclick="verifyBankOTP()" class="verify-otp">
+<i data-lucide="check-circle"></i>
+Verify OTP
+</button>
+
+<button onclick="generateBankOTP()" class="resend-otp">
+<i data-lucide="refresh-ccw"></i>
+Resend OTP
+</button>
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+<div id="qrModal" class="modern-modal">
+
+<div class="modern-modal-box qr-box">
+
+<h2>Scan to Pay</h2>
+
+<p>Use GCash, Maya, or your bank app</p>
+
+<img src="qr-placeholder.png" class="qr-image">
+
+<div class="modern-actions">
+
+<button onclick="closeQR()" class="btn-light">
+Cancel
+</button>
+
+<button onclick="confirmDonation()" class="btn-primary">
+I Have Paid
+</button>
+
+</div>
+
+</div>
+</div>
+
+<div id="processingModal" class="modern-modal">
+
+<div class="modern-modal-box processing-box">
+
+<div class="loader"></div>
+
+<h3>Processing Payment...</h3>
+
+<p>Please wait while we confirm your donation.</p>
+
+</div>
+
+</div>
+
+<div id="donationSuccessModal" class="modern-modal">
+
+<div class="modern-modal-box success-box">
+
+<div class="success-icon">✓</div>
+
+<h3>Thank You for Your Donation</h3>
+
+<p>Your support helps improve the community.</p>
+
+<button onclick="closeDonationSuccess()" class="btn-primary">
+Close
+</button>
+
+</div>
+
+</div>
+
     <script src="script.js"></script>
 
     <script>
