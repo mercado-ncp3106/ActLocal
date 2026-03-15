@@ -371,9 +371,23 @@ text.textContent = "Save Settings";
 
 }
 
+
 //=====================================================
 // PAGE LOAD
 window.onload = function(){
+
+/* APPLY SAVED THEME ONLY ON HOME PAGE */
+if(window.location.pathname.includes("home.html")){
+
+let savedTheme = localStorage.getItem("theme");
+
+if(savedTheme === "dark"){
+document.body.classList.add("dark");
+}
+
+}
+
+
 
 renderPosts();
 
@@ -400,15 +414,18 @@ updatePostsHelped();
 
 }
 
-let modalInput = document.getElementById("modalCommentInput");
+let sendBtn = document.getElementById("sendCommentBtn");
 
-if(modalInput){
-modalInput.addEventListener("keypress", function(e){
-if(e.key === "Enter"){
-addComment(currentPostIndex,this);
-}
+if(sendBtn){
+sendBtn.addEventListener("click", function(){
+
+let input = document.getElementById("modalCommentInput");
+
+addComment(currentPostIndex,input);
+
 });
 }
+
 
 /* PROFILE IMAGE */
 let savedImage = localStorage.getItem("profileImage");
@@ -1714,6 +1731,8 @@ img.style.transform =
 
 }
 
+
+
 function closeImageViewer(){
 document.getElementById("imageViewer").style.display = "none";
 document.body.classList.remove("no-scroll");
@@ -2620,6 +2639,20 @@ document.getElementById("qrModal").style.display = "none";
 document.body.classList.remove("no-scroll");
 
 }
+
+function logoutUser(){
+
+let confirmLogout = confirm("Are you sure you want to logout?");
+
+if(!confirmLogout) return;
+
+/* keep theme so it stays after login */
+
+/* redirect to login page */
+window.location.href = "index.html";
+
+}
+
 //============================================================================================
 
 document.addEventListener("click", function(e){

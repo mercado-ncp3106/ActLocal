@@ -2,6 +2,7 @@
 <html>
 
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ActLocal Home</title>
     <link rel="stylesheet" href="./style.css">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -17,10 +18,10 @@
         <span class="local-logo">Local</span>
     </div>
 
-    <!-- Category Navigation -->
-    <div class="nav-actions">
+<!-- Category Navigation -->
+<div class="nav-actions category-nav">
 
-        <div class="nav-item active active-item" onclick="filterPosts('All')">
+<div class="nav-item all active active-item" onclick="filterPosts('All')">
             <i data-lucide="home"></i>
             <span class="post-text"> </span>
         </div>
@@ -172,10 +173,11 @@
                     <span>Settings</span>
                 </button>
 
-                <button class="logout-btn">
-                    <i data-lucide="log-out"></i>
-                    <span>Logout</span>
-                </button>
+<button class="logout-btn" onclick="logoutUser()">
+    <i data-lucide="log-out"></i>
+    <span>Logout</span>
+</button>
+
 
             </div>
 
@@ -383,12 +385,19 @@ Change Number
 <div class="comment-user-avatar" id="commentUserAvatar"></div>
 
 <div class="comment-input-box">
+
 <input 
 type="text"
 placeholder="Write a comment..."
 id="modalCommentInput"
 >
+
+<button id="sendCommentBtn" class="send-comment">
+<i data-lucide="send"></i>
+</button>
+
 </div>
+
 
 </div>
 

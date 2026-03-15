@@ -261,8 +261,9 @@ display:none;
 }
 
 .feed{
-    max-width:650px;
-    margin:40px auto;
+max-width:650px;
+width:95%;
+margin:20px auto;
 }
 
 .post{
@@ -1106,6 +1107,104 @@ font-weight:600;
 margin:8px 0;
 }
 
+/* ================= CATEGORY ACTIVE (PC) ================= */
+
+/* Default active (All / Other) */
+.nav-item.active{
+background:#ffbf00;
+color:#000;
+border-radius:6px;
+}
+
+/* Water */
+.nav-item.waterpollution.active{
+background:#38bdf8;
+color:#083344;
+}
+
+/* Air */
+.nav-item.airpollution.active{
+background:#cbd5f5;
+color:#1e293b;
+}
+
+/* Waste */
+.nav-item.wastemanagement.active{
+background:#86efac;
+color:#14532d;
+}
+
+/* Infrastructure */
+.nav-item.infrastructure.active{
+background:#fcd34d;
+color:#111827;
+}
+
+/* Coastal */
+.nav-item.coastaldegradation.active{
+background:#7dd3fc;
+color:#0c4a6e;
+}
+
+/* Climate */
+.nav-item.climateresilience.active{
+background:#4ade80;
+color:#052e16;
+}
+
+/* Fire */
+.nav-item.firehazard.active{
+background:#f87171;
+color:#7f1d1d;
+}
+
+/* Flood */
+.nav-item.flooddrainage.active{
+background:#60a5fa;
+color:#1e3a8a;
+}
+
+/* Other */
+.nav-item.other.active{
+background:#ffbf00;
+color:#000;
+}
+
+body.dark .other.active,
+body.dark .nav-item.active{
+    color: #000;
+}
+
+/* DARK MODE: ALL category active */
+body.dark .nav-item.all.active{
+background:#1f6ed4 !important;
+color:#000 !important;
+}
+
+
+body.dark .nav-item.all.active svg{
+stroke:#000 !important;
+}
+
+
+/* DARK MODE HOVER TEXT COLOR */
+body.dark .nav-item:hover,
+body.dark .post-btn:hover{
+color:#000;
+}
+
+/* DARK MODE FIX - ALL category should stay blue */
+body.dark .category-nav .nav-item.all.active{
+background:#1f6ed4 !important;
+color:white !important;
+}
+
+
+/* icon stroke color */
+body.dark .nav-item:hover svg,
+body.dark .post-btn:hover svg{
+stroke:#000;
+}
 /* comment row */
 
 .comment-row{
@@ -2432,6 +2531,8 @@ body.dark .nav-item{
 color:#e2e8f0;
 }
 
+
+
 .nav-item:not(.waterpollution):not(.airpollution):not(.wastemanagement)
 :not(.infrastructure):not(.coastaldegradation):not(.climateresilience)
 :not(.firehazard):not(.flooddrainage):hover{
@@ -2590,6 +2691,404 @@ color:white;
 box-shadow:0 0 10px rgba(34,197,94,0.5);
 }
 
+.send-comment{
+background:none;
+border:none;
+cursor:pointer;
+display:flex;
+align-items:center;
+justify-content:center;
+padding:6px;
+}
+
+.send-comment svg{
+width:20px;
+height:20px;
+color:#1f6ed4;
+}
+
+.send-comment:hover{
+background:#ffbf00;
+border-radius:50%;
+}
+
+body.dark .send-comment svg{
+color:#ffbf00;
+}
+
+body.dark .send-comment:hover{
+background:#1f6ed4;
+}
+
+
+@media (max-width:768px){
+
+/* center card properly */
+.card{
+width:80%;
+max-width:420px;
+padding:40px 30px;
+}
+
+/* fix overflow caused by 120% width */
+.card input,
+.card select,
+.card textarea,
+.card button{
+width:100%;
+left:0;
+transform:none;
+}
+
+/* fix labels */
+.card label{
+width:100%;
+left:0;
+transform:none;
+}
+
+/* logo slightly smaller */
+.act-logo,
+.local-logo{
+font-size:22px;
+padding:12px 18px;
+}
+
+/* quote spacing */
+.quote{
+font-size:18px;
+padding:0 20px;
+}
+
+/* footer spacing */
+.footer-text{
+padding:0 20px;
+}
+
+
+
+}
+
+/* ================= MOBILE NAVBAR ================= */
+
+@media (max-width:768px){
+
+/* TOP NAVBAR */
+.navbar{
+padding:12px 16px;
+}
+
+/* Hide category nav from top */
+.category-nav{
+position:fixed;
+bottom:0;
+left:0;
+width:100%;
+background:white;
+border-top:1px solid #eee;
+display:flex;
+justify-content:space-around;
+padding:8px 0;
+z-index:1500;
+}
+
+/* Scrollable categories */
+.category-nav{
+overflow-x:auto;
+gap:6px;
+}
+
+/* Prevent bottom bar covering feed */
+.feed{
+padding-bottom:70px;
+}
+
+/* Icon only */
+.category-nav .post-text{
+display:none;
+}
+
+/* Center icons */
+.category-nav .nav-item{
+flex-direction:column;
+font-size:12px;
+padding:6px;
+}
+
+/* Smaller icons */
+.category-nav svg{
+width:22px;
+height:22px;
+}
+
+}
+
+/* ================= MOBILE PROFILE MODAL ================= */
+
+@media (max-width:768px){
+
+.profile-modal{
+align-items:stretch;
+}
+
+.profile-content{
+width:100%;
+height:100vh;
+border-radius:0;
+
+display:flex;
+flex-direction:column;
+
+overflow:hidden; /* prevents double scroll */
+}
+
+/* Make the inside scroll */
+.profile-info{
+flex:1;
+overflow-y:auto;
+padding-bottom:20px;
+}
+
+/* Activity + buttons remain visible */
+.profile-actions{
+margin-top:20px;
+}
+
+/* Avatar slightly smaller */
+.profile-avatar{
+width:90px;
+height:90px;
+}
+
+/* Activity responsive */
+.activity{
+gap:8px;
+}
+
+.activity-box{
+padding:10px;
+font-size:13px;
+}
+
+/* Buttons spacing */
+.profile-actions{
+margin-top:18px;
+gap:12px;
+}
+
+}
+
+/* ================= MOBILE CREATE POST ================= */
+
+@media (max-width:768px){
+
+#postModal{
+align-items:stretch;
+}
+
+.post-content{
+width:100%;
+height:100dvh;   /* FIX for iPhone dynamic viewport */
+border-radius:0;
+overflow-y:auto;
+padding:20px;
+}
+
+}
+
+@media (max-width:768px){
+
+body.dark .category-nav{
+background:#1e293b;
+border-top:1px solid #334155;
+}
+
+body.dark .category-nav .nav-item{
+color:#e2e8f0;
+}
+
+}
+
+
+/* ================= MOBILE CATEGORY ACTIVE COLORS ================= */
+
+@media (max-width:768px){
+
+.category-nav .nav-item.all.active{
+background:#ffbf00 !important;
+color:#000 !important;
+}
+
+/* Water */
+.category-nav .nav-item.waterpollution.active{
+background:#38bdf8 !important;
+color:#083344 !important;
+}
+
+/* Air */
+.category-nav .nav-item.airpollution.active{
+background:#cbd5f5 !important;
+color:#1e293b !important;
+}
+
+/* Waste */
+.category-nav .nav-item.wastemanagement.active{
+background:#86efac !important;
+color:#14532d !important;
+}
+
+/* Infrastructure */
+.category-nav .nav-item.infrastructure.active{
+background:#fcd34d !important;
+color:#111827 !important;
+}
+
+/* Coastal */
+.category-nav .nav-item.coastaldegradation.active{
+background:#7dd3fc !important;
+color:#0c4a6e !important;
+}
+
+/* Climate */
+.category-nav .nav-item.climateresilience.active{
+background:#4ade80 !important;
+color:#052e16 !important;
+}
+
+/* Fire */
+.category-nav .nav-item.firehazard.active{
+background:#f87171 !important;
+color:#7f1d1d !important;
+}
+
+/* Flood */
+.category-nav .nav-item.flooddrainage.active{
+background:#60a5fa !important;
+color:#1e3a8a !important;
+}
+
+/* Other */
+.category-nav .nav-item.other.active{
+background:#ffbf00 !important;
+color:#000 !important;
+}
+
+}
+
+
+
+
+
+}
+
+@media (hover: none){
+
+.post-actions button:hover{
+background:none !important;
+color:inherit !important;
+}
+
+.like-btn:hover,
+.donate-btn:hover,
+.send-comment:hover{
+background:none !important;
+}
+
+
+}
+
+/* ================= DARK MODE MOBILE CATEGORY ACTIVE ================= */
+
+/* Water */
+body.dark .category-nav .nav-item.waterpollution.active{
+background:#38bdf8 !important;
+color:#083344 !important;
+}
+
+/* Air */
+body.dark .category-nav .nav-item.airpollution.active{
+background:#cbd5f5 !important;
+color:#1e293b !important;
+}
+
+/* Waste */
+body.dark .category-nav .nav-item.wastemanagement.active{
+background:#86efac !important;
+color:#14532d !important;
+}
+
+/* Infrastructure */
+body.dark .category-nav .nav-item.infrastructure.active{
+background:#fcd34d !important;
+color:#111827 !important;
+}
+
+/* Coastal */
+body.dark .category-nav .nav-item.coastaldegradation.active{
+background:#7dd3fc !important;
+color:#0c4a6e !important;
+}
+
+/* Climate */
+body.dark .category-nav .nav-item.climateresilience.active{
+background:#4ade80 !important;
+color:#052e16 !important;
+}
+
+/* Fire */
+body.dark .category-nav .nav-item.firehazard.active{
+background:#f87171 !important;
+color:#7f1d1d !important;
+}
+
+/* Flood */
+body.dark .category-nav .nav-item.flooddrainage.active{
+background:#60a5fa !important;
+color:#1e3a8a !important;
+}
+
+
+
+@media (max-width:768px){
+
+body.dark .post-actions button:hover,
+body.dark .like-btn:hover,
+body.dark .donate-btn:hover,
+body.dark .send-comment:hover{
+background:none !important;
+color:inherit !important;
+}
+
+
+}
+
+/* ================= MOBILE POST ACTION ICON ONLY ================= */
+
+@media (max-width:768px){
+
+/* hide button text */
+.post-actions button{
+font-size:0;
+}
+
+/* show icon again */
+.post-actions button svg{
+font-size:16px;
+width:22px;
+height:22px;
+}
+
+/* center icons */
+.post-actions button{
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+}
+
+
+
 /* Mobile */
 
 @media (max-width:768px){
@@ -2599,3 +3098,55 @@ box-shadow:0 0 10px rgba(34,197,94,0.5);
 }
 
 }
+
+@media (hover: none){
+
+.nav-item:hover,
+.settings-btn:hover,
+.logout-btn:hover,
+.post-actions button:hover,
+.like-btn:hover,
+.donate-btn:hover,
+.send-comment:hover{
+background:inherit !important;
+color:inherit !important;
+}
+
+.profile-avatar:hover .avatar-overlay{
+opacity:0 !important;
+}
+
+}
+
+/* ================= MOBILE CATEGORY ACTIVE FIX ================= */
+
+@media (max-width:768px){
+
+.category-nav .nav-item.active{
+background:#ffbf00 !important;
+color:#000 !important;
+border-radius:6px;
+}
+
+/* make icon visible */
+.category-nav .nav-item.active svg{
+stroke:#000 !important;
+}
+
+}
+
+
+/* ================= DISABLE HOVER ON MOBILE ================= */
+
+@media (hover:none){
+
+.settings-btn:hover,
+.logout-btn:hover,
+.save-btn:hover:not(.saved){
+background:inherit !important;
+color:inherit !important;
+}
+
+}
+
+
