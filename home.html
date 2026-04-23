@@ -71,6 +71,10 @@
             <span class="post-text">Other</span>
         </div>
 
+        <div class="nav-item completed" onclick="filterPosts('Completed')">
+    <i data-lucide="check-circle"></i>
+    <span class="post-text">Done</span>
+</div>
     </div>
 
     <!-- Right Side Buttons -->
@@ -92,6 +96,7 @@
     <!-- Feed -->
     <div class="feed" id="feed">
         <p class="empty-feed">No posts yet.</p>
+        
     </div>
 
 
@@ -146,6 +151,10 @@
             <h4 class="activity-title">Activity</h4>
 
             <div class="activity">
+                <div class="activity-box">
+    <strong id="receivedTotal">₱0</strong>
+    <span>Received</span>
+</div>
 
                 <div class="activity-box">
                     <strong id="postCount">0</strong>
@@ -296,6 +305,7 @@ Change Number
 
     <!-- CREATE POST MODAL -->
     <div class="profile-modal" id="postModal">
+        
 
         <div class="post-content">
 
@@ -338,11 +348,19 @@ Change Number
                 <label>Description</label>
                 <textarea id="postDescription" placeholder="Describe the issue in detail..." required></textarea>
 
+                <label>Donation Goal (₱)</label>
+<input 
+type="number" 
+id="postGoal" 
+placeholder="Enter goal amount"
+min="1"
+required>
+
                 <label>Upload Image</label>
 
                 <div id="uploadBox" class="upload-box">
 
-                    <input type="file" id="postImage" accept="image/*" hidden>
+                    <input type="file" id="postMedia" accept="image/*,video/*" hidden>
 
                     <img id="imagePreview">
 

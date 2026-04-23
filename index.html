@@ -47,6 +47,37 @@
 
     </div>
 
+    <div id="loginOtpModal" class="modern-modal">
+
+    <div class="modern-modal-box">
+
+        <h2>Verify OTP</h2>
+        <p id="loginOtpPhone"></p>
+
+        <div class="otp-container">
+    <input type="text" maxlength="1" class="signup-otp-input login-otp-input">
+    <input type="text" maxlength="1" class="signup-otp-input login-otp-input">
+    <input type="text" maxlength="1" class="signup-otp-input login-otp-input">
+    <input type="text" maxlength="1" class="signup-otp-input login-otp-input">
+    <input type="text" maxlength="1" class="signup-otp-input login-otp-input">
+    <input type="text" maxlength="1" class="signup-otp-input login-otp-input">
+</div>
+
+        <p id="loginOtpTimer" class="otp-timer"></p>
+
+<button onclick="resendLoginOTP()" class="btn-light" id="resendLoginBtn" style="display:none;">
+    Resend OTP
+</button>
+
+        <div class="modern-actions">
+            <button onclick="verifyLoginOTP()" class="btn-primary">Verify</button>
+            <button onclick="closeLoginOTP()" class="btn-light">Cancel</button>
+        </div>
+
+    </div>
+
+</div>
+
     <p class="footer-text">
         ActLocal empowers communities to identify, report, and address local environmental and infrastructure issues.
     </p>

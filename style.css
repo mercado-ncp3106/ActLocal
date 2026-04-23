@@ -1856,6 +1856,69 @@ background:white;
 margin-top:10px;
 }
 
+.signup-otp-container{
+display:flex;
+justify-content:center;
+gap:10px;
+margin-top:20px;
+}
+.post-video {
+    width: 100%;
+    max-height: 400px;
+    object-fit: cover;
+    border-radius: 10px;
+    display: block;
+}
+.signup-otp-input{
+width:45px;
+height:55px;
+font-size:22px;
+text-align:center;
+border:2px solid #ddd;
+border-radius:10px;
+outline:none;
+transition:0.2s;
+}
+.modal-post-video {
+    width: 100%;
+    max-height: 70vh; /* taller than feed */
+    object-fit: contain; /* IMPORTANT: no cropping */
+    border-radius: 10px;
+    display: block;
+}
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #eee;
+    border-radius: 5px;
+    margin-top: 5px;
+}
+
+.nav-item.completed.active{
+    background:#22c55e;
+    color:#052e16;
+}
+
+.tag.completed{
+    background:#22c55e;
+    color:#052e16;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #4caf50;
+    border-radius: 5px;
+}
+
+.signup-otp-input:focus{
+border-color:#4CAF50;
+box-shadow:0 0 5px rgba(76,175,80,0.4);
+}
+
+.signup-otp-input.filled{
+border-color:#4CAF50;
+}
+
 .phone-row{
 display:flex;
 gap:8px;
@@ -2974,11 +3037,6 @@ color:#000 !important;
 }
 
 }
-
-
-
-
-
 
 
 @media (hover: none){

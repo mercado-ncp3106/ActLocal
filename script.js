@@ -20,6 +20,13 @@ let translateY = 0;
 let currentCategory = "All";
 let helpedPosts = JSON.parse(localStorage.getItem("helpedPosts")) || [];
 let donateFromModal = false;
+let signupOTP = "";
+let tempSignupUser = null;
+let signupOtpTimer;
+let signupOtpSeconds = 60;
+let loginOTP = "";
+let loginOtpTimer;
+let loginOtpSeconds = 60;
 //=====================================================
 // LOGIN
 function login(event){
@@ -29,7 +36,6 @@ event.preventDefault();
 let email = document.getElementById("loginEmail").value;
 let password = document.getElementById("loginPassword").value;
 
-/* get saved account */
 let savedUser = JSON.parse(localStorage.getItem("userAccount"));
 
 if(!savedUser){
@@ -39,10 +45,39 @@ return;
 
 if(email === savedUser.email && password === savedUser.password){
 
-alert("Login successful!");
+/* ✅ GET VERIFIED PHONE FROM SIGNUP */
+let phone = localStorage.getItem("verifiedPhone");
 
-/* go to home page */
-window.location.href = "home.html";
+if(!phone){
+alert("No verified phone found. Please verify your number first.");
+return;
+}
+
+/* ✅ GENERATE OTP */
+loginOTP = Math.floor(100000 + Math.random()*900000).toString();
+
+alert("2FA OTP sent to " + phone + "\nCode: " + loginOTP);
+
+/* ✅ SHOW 2FA MODAL */
+let modal = document.getElementById("loginOtpModal");
+modal.style.display = "flex";
+document.body.classList.add("no-scroll");
+
+/* display phone in UI */
+document.getElementById("loginOtpPhone").textContent = phone;
+
+/* reset inputs */
+document.querySelectorAll(".login-otp-input").forEach(i => i.value = "");
+let inputs = document.querySelectorAll(".login-otp-input");
+
+inputs.forEach(i => i.value = "");
+
+if(inputs.length > 0){
+    inputs[0].focus();
+}
+
+/* start timer */
+startLoginOTPTimer();
 
 }else{
 
@@ -52,9 +87,154 @@ alert("Invalid email or password.");
 
 }
 
+function verifyLoginOTP(){
 
+let inputs = document.querySelectorAll(".login-otp-input");
+
+let userOTP = "";
+inputs.forEach(i => userOTP += i.value);
+
+if(userOTP === ""){
+alert("Enter OTP");
+return;
+}
+
+if(loginOTP === ""){
+alert("OTP expired. Request again.");
+return;
+}
+
+if(userOTP !== loginOTP){
+alert("Invalid OTP");
+return;
+}
+
+/* ✅ SUCCESS LOGIN */
+alert("Login successful!");
+
+loginOTP = "";
+
+/* redirect */
+if(!localStorage.getItem("profileName")){
+    window.location.href = "home.html?newUser=true";
+} else {
+    window.location.href = "home.html";
+}
+
+}
+
+function startLoginOTPTimer(){
+
+clearInterval(loginOtpTimer);
+
+loginOtpSeconds = 60;
+
+let timer = document.getElementById("loginOtpTimer");
+
+loginOtpTimer = setInterval(function(){
+
+if(!timer) return;
+
+timer.textContent = "OTP expires in " + loginOtpSeconds + " seconds";
+
+loginOtpSeconds--;
+
+if(loginOtpSeconds < 0){
+
+clearInterval(loginOtpTimer);
+
+timer.textContent = "OTP expired.";
+
+loginOTP = "";
+
+/* ✅ SHOW RESEND BUTTON */
+document.getElementById("resendLoginBtn").style.display = "inline-block";
+
+}
+
+},1000);
+
+}
+
+function setupLoginOTPInputs(){
+
+let inputs = document.querySelectorAll(".login-otp-input");
+
+inputs.forEach((input, index)=>{
+
+input.addEventListener("input", function(){
+
+this.value = this.value.replace(/[^0-9]/g,"");
+
+if(this.value.length === 1 && index < inputs.length - 1){
+inputs[index+1].focus();
+}
+
+/* auto verify */
+let otp = "";
+inputs.forEach(i => otp += i.value);
+
+if(otp.length === inputs.length){
+verifyLoginOTP();
+}
+
+});
+
+input.addEventListener("keydown", function(e){
+
+if(e.key === "Backspace" && this.value === "" && index > 0){
+inputs[index-1].focus();
+}
+
+});
+
+});
+
+}
+
+function closeLoginOTP(){
+    document.getElementById("loginOtpModal").style.display = "none";
+    document.body.classList.remove("no-scroll");
+}
+
+function resendLoginOTP(){
+
+/* prevent spam */
+if(loginOtpSeconds > 0 && loginOTP !== ""){
+    alert("Please wait before requesting a new OTP.");
+    return;
+}
+
+/* get phone again */
+let phone = localStorage.getItem("verifiedPhone");
+
+if(!phone){
+    alert("No verified phone found.");
+    return;
+}
+
+/* generate new OTP */
+loginOTP = Math.floor(100000 + Math.random()*900000).toString();
+
+alert("New OTP sent to " + phone + "\nCode: " + loginOTP);
+
+/* reset inputs */
+document.querySelectorAll(".login-otp-input").forEach(i => i.value = "");
+document.querySelectorAll(".login-otp-input")[0].focus();
+
+/* hide resend button again */
+document.getElementById("resendLoginBtn").style.display = "none";
+
+/* restart timer */
+startLoginOTPTimer();
+}
 //=====================================================
 // SIGNUP
+
+window.onerror = function(msg, url, line){
+    console.error("JS ERROR:", msg, "at line:", line);
+};
+
 function signup(event){
 
 event.preventDefault();
@@ -63,6 +243,7 @@ let email = document.getElementById("signupEmail").value;
 let password = document.getElementById("signupPassword").value;
 let confirm = document.getElementById("confirmPassword").value;
 let error = document.getElementById("error-message");
+let phone = document.getElementById("signupPhone").value;
 
 if(password !== confirm){
 error.textContent = "Passwords do not match.";
@@ -76,21 +257,31 @@ return;
 
 error.textContent = "";
 
-/* save account */
-let user = {
+/* SAVE TEMP USER */
+tempSignupUser = {
 email: email,
-password: password
+password: password,
+phone: phone
 };
 
-localStorage.setItem("userAccount", JSON.stringify(user));
+/* 🔥 CHECK IF OTP STILL ACTIVE */
+if(signupOTP !== "" && signupOtpSeconds > 0){
 
-alert("Account created successfully!");
+    // ✅ JUST REOPEN MODAL (NO NEW OTP)
+    document.getElementById("signupOtpModal").style.display = "flex";
 
-/* redirect AFTER alert */
-setTimeout(function(){
-window.location.href = "index.html";
-}, 500);
+    return;
+}
 
+/* ✅ GENERATE NEW OTP ONLY IF NONE OR EXPIRED */
+signupOTP = Math.floor(100000 + Math.random()*900000).toString();
+
+alert("OTP sent to " + phone + "\nCode: " + signupOTP);
+
+/* show modal */
+document.getElementById("signupOtpModal").style.display = "flex";
+setupSignupOTPInputs();
+startSignupOTPTimer();
 }
 
 
@@ -165,6 +356,22 @@ toggle.checked = true;
 toggle.checked = false;
 }
 
+let verifiedStatus = localStorage.getItem("phoneVerified");
+
+let phoneInput = document.getElementById("userPhone");
+
+if(verifiedStatus === "true"){
+    phoneInput.value = localStorage.getItem("verifiedPhone") || "";
+    phoneInput.disabled = true;
+
+    document.getElementById("phoneVerifiedBadge").style.display = "block";
+    document.getElementById("changeNumberBtn").style.display = "inline-block";
+    document.getElementById("otpSection").style.display = "none";
+
+}else{
+    phoneInput.disabled = false;
+}
+
 document.getElementById("houseNumber").value =
 localStorage.getItem("house") || "";
 
@@ -197,7 +404,9 @@ return;
 }
 
 /* require phone verification */
-if(!phoneVerified){
+let savedVerified = localStorage.getItem("phoneVerified");
+
+if(savedVerified !== "true"){
 alert("Please verify your cellphone number before closing settings.");
 return;
 }
@@ -342,7 +551,9 @@ document.getElementById("userPhone").setCustomValidity("");
 
 /* require verification only if OTP section is visible */
 /* require phone verification before saving */
-if(!phoneVerified){
+let savedVerified = localStorage.getItem("phoneVerified");
+
+if(savedVerified !== "true"){
 alert("Please verify your cellphone number before saving settings.");
 return;
 }
@@ -376,7 +587,11 @@ text.textContent = "Save Settings";
 // PAGE LOAD
 window.onload = function(){
 
-/* APPLY SAVED THEME ONLY ON HOME PAGE */
+    if(document.querySelector(".login-otp-input")){
+    setupLoginOTPInputs();
+}
+
+    /* APPLY SAVED THEME ONLY ON HOME PAGE */
 if(window.location.pathname.includes("home.html")){
 
 let savedTheme = localStorage.getItem("theme");
@@ -384,9 +599,35 @@ let savedTheme = localStorage.getItem("theme");
 if(savedTheme === "dark"){
 document.body.classList.add("dark");
 }
+let phoneInputField = document.getElementById("userPhone");
+
+if(phoneInputField){
+
+phoneInputField.addEventListener("input", function(){
+
+let verifiedPhone = localStorage.getItem("verifiedPhone");
+
+/* only reset if number really changed */
+if(verifiedPhone && this.value !== verifiedPhone){
+
+phoneVerified = false;
+
+localStorage.removeItem("phoneVerified");
+localStorage.removeItem("verifiedPhone");
+
+document.getElementById("phoneVerifiedBadge").style.display = "none";
+document.getElementById("changeNumberBtn").style.display = "none";
+
+document.getElementById("otpSection").style.display = "block";
 
 }
 
+
+
+});
+
+}
+};
 
 
 renderPosts();
@@ -496,7 +737,6 @@ if(phone && document.getElementById("userPhone")){
 document.getElementById("userPhone").value = phone;
 }
 
-let verifiedPhone = localStorage.getItem("verifiedPhone");
 let verifiedStatus = localStorage.getItem("phoneVerified");
 
 let phoneInput = document.getElementById("userPhone");
@@ -506,7 +746,7 @@ if(verifiedStatus === "true" && phoneInput){
 phoneVerified = true;
 
 /* restore verified number */
-phoneInput.value = verifiedPhone;
+phoneInput.value = localStorage.getItem("verifiedPhone") || "";
 
 document.getElementById("phoneVerifiedBadge").style.display = "block";
 
@@ -538,16 +778,26 @@ if(document.getElementById("postCount")){
 document.getElementById("postCount").textContent = posts.length;
 }
 
-let totalDonations = 0;
+let totalReceived = 0;
+
+let currentUser = localStorage.getItem("profileName");
 
 posts.forEach(post=>{
-totalDonations += post.donations || 0;
+    if(post.name === currentUser){
+        totalReceived += post.donations || 0;
+    }
 });
 
 let donationDisplay = document.getElementById("donationTotal");
 
+let totalDonations = 0;
+
+posts.forEach(post=>{
+    totalDonations += post.donations || 0;
+});
+
 if(donationDisplay){
-donationDisplay.textContent = "₱" + totalDonations.toLocaleString();
+    donationDisplay.textContent = "₱" + totalReceived.toLocaleString();
 }
 
 /* AVATAR CLICK → FILE PICKER */
@@ -605,41 +855,23 @@ window.history.replaceState({}, document.title, "home.html");
 
 },2000);
 
+
 },300);
 
 }
 
+
 setupImageUpload();
 setInterval(updateTimes,10000);
+
 };
 
-let phoneInputField = document.getElementById("userPhone");
+let params = new URLSearchParams(window.location.search);
 
-if(phoneInputField){
-
-phoneInputField.addEventListener("input", function(){
-
-let verifiedPhone = localStorage.getItem("verifiedPhone");
-
-/* only reset if number really changed */
-if(verifiedPhone && this.value !== verifiedPhone){
-
-phoneVerified = false;
-
-localStorage.removeItem("phoneVerified");
-localStorage.removeItem("verifiedPhone");
-
-document.getElementById("phoneVerifiedBadge").style.display = "none";
-document.getElementById("changeNumberBtn").style.display = "none";
-
-document.getElementById("otpSection").style.display = "block";
-
-}
-
-
-
-});
-
+if(params.get("newUser") === "true"){
+    setTimeout(() => {
+        openProfile();
+    }, 300);
 }
 
 function updatePostsHelped(){
@@ -745,7 +977,9 @@ inputs[index - 1].focus();
 });
 
 }
-setupOTPInputs();
+if(document.querySelector(".otp-input")){
+    setupOTPInputs();
+}
 
 function setupPaymentOTPInputs(){
 
@@ -775,7 +1009,9 @@ inputs[index - 1].focus();
 
 }
 
-setupPaymentOTPInputs();
+if(document.querySelector(".payment-otp-input")){
+    setupPaymentOTPInputs();
+}
 
 function verifyOTP(){
 
@@ -843,17 +1079,16 @@ document.getElementById("phoneVerifiedBadge").style.display = "none";
 /* hide change number button */
 document.getElementById("changeNumberBtn").style.display = "none";
 
-/* hide OTP section */
-document.getElementById("otpSection").style.display = "none";
+/* show OTP section again */
+document.getElementById("otpSection").style.display = "block";
 
-/* reset verification state */
+/* reset verification */
 phoneVerified = false;
 generatedOTP = "";
 
-/* clear OTP boxes */
-document.querySelectorAll(".otp-input").forEach(input=>{
-input.value = "";
-});
+/* remove saved verification */
+localStorage.removeItem("phoneVerified");
+localStorage.removeItem("verifiedPhone");
 
 /* reset timer */
 clearInterval(otpTimer);
@@ -864,13 +1099,8 @@ if(timer){
 timer.textContent = "";
 }
 
-/* remove saved verification */
-localStorage.removeItem("phoneVerified");
-localStorage.removeItem("verifiedPhone");
-
 /* focus input */
 phoneInput.focus();
-
 }
 
 function startOTPTimer(){
@@ -953,25 +1183,27 @@ document.querySelector(".select-btn").style.borderColor="#ddd";
 }
 
 let uploadBox = document.getElementById("uploadBox");
-let imageInput = document.getElementById("postImage");
+let mediaInput = document.getElementById("postMedia");
 let preview = document.getElementById("imagePreview");
 let uploadText = document.getElementById("uploadText");
 let removeBtn = document.getElementById("removeImageBtn");
 
-if(uploadBox && imageInput){
+let mediaType = "";
+
+if(uploadBox && mediaInput){
 
 uploadBox.addEventListener("click", function(){
-imageInput.click();
+mediaInput.click();
 });
 
-imageInput.addEventListener("change", function(){
+mediaInput.addEventListener("change", function(){
 
 let file = this.files[0];
 if(!file) return;
 
-/* LIMIT IMAGE SIZE */
-if(file.size > 700000){ // 700KB limit
-alert("Image must be less than 700KB.");
+/* ✅ allow bigger files */
+if(file.size > 10 * 1024 * 1024){
+alert("File must be less than 10MB.");
 this.value = "";
 return;
 }
@@ -980,11 +1212,43 @@ let reader = new FileReader();
 
 reader.onload = function(e){
 
+if(file.type.startsWith("image")){
+mediaType = "image";
+
 preview.src = e.target.result;
 preview.style.display = "block";
 
+/* mark as image */
+preview.dataset.type = "image";
+
 uploadText.style.display = "none";
 removeBtn.style.display = "block";
+}
+
+if(file.type.startsWith("video")){
+    mediaType = "video";
+
+    preview.style.display = "none"; // hide image preview
+
+    /* REMOVE OLD VIDEO IF EXISTS */
+    let oldVideo = document.getElementById("videoPreview");
+    if(oldVideo) oldVideo.remove();
+
+    /* CREATE VIDEO PREVIEW */
+    let video = document.createElement("video");
+    video.id = "videoPreview";
+    video.src = e.target.result;
+    preview.dataset.video = e.target.result;
+    video.style.width = "100%";
+    video.style.borderRadius = "8px";
+    video.style.maxHeight = "300px";
+    video.style.objectFit = "cover";
+
+    uploadBox.appendChild(video);
+
+    uploadText.style.display = "none";
+    removeBtn.style.display = "block";
+}
 
 };
 
@@ -998,23 +1262,26 @@ reader.readAsDataURL(file);
 
 /* remove image */
 function removeImage(event){
+    if(event) event.stopPropagation();
 
-/* stop upload box click */
-if(event) event.stopPropagation();
+    let preview = document.getElementById("imagePreview");
+    let uploadText = document.getElementById("uploadText");
+    let removeBtn = document.getElementById("removeImageBtn");
+    let video = document.getElementById("videoPreview");
+    let input = document.getElementById("postMedia");
 
-let imageInput = document.getElementById("postImage");
-let preview = document.getElementById("imagePreview");
-let uploadText = document.getElementById("uploadText");
-let removeBtn = document.getElementById("removeImageBtn");
+    if(video) video.remove();
 
-imageInput.value = "";
+    preview.src = "";
+    preview.style.display = "none";
 
-preview.src = "";
-preview.style.display = "none";
+    // ✅ IMPORTANT FIXES
+    preview.dataset.type = "";
+    preview.dataset.video = "";   // <-- ADD THIS
+    input.value = "";             // <-- ADD THIS
 
-uploadText.style.display = "block";
-removeBtn.style.display = "none";
-
+    uploadText.style.display = "block";
+    removeBtn.style.display = "none";
 }
 
 // Feed
@@ -1026,17 +1293,32 @@ let title = document.getElementById("postTitle").value;
 let category = document.getElementById("postCategory").value;
 let description = document.getElementById("postDescription").value;
 
-let image = "";
+let media = "";
+let mediaTypeSaved = "";
 
 /* get preview safely */
-let previewElement = document.getElementById("imagePreview");
 
-if(previewElement && previewElement.src && previewElement.src.startsWith("data:image")){
-image = previewElement.src;
+
+let videoElement = document.querySelector("#uploadBox video");
+let previewElement = document.getElementById("imagePreview");
+if(previewElement){
+
+    /* IMAGE */
+    if(previewElement.dataset.type === "image" && previewElement.src){
+        media = previewElement.src;
+        mediaTypeSaved = "image";
+    }
+
+    /* VIDEO */
+    if(previewElement.dataset.video){
+        media = previewElement.dataset.video;
+        mediaTypeSaved = "video";
+    }
+
 }
 
 /* require image upload */
-if(!previewElement || !previewElement.src || !previewElement.src.startsWith("data:image")){
+if(!media){
 uploadBox.classList.add("upload-error");
 setTimeout(function(){
 uploadBox.classList.remove("upload-error");
@@ -1044,7 +1326,7 @@ uploadBox.classList.remove("upload-error");
 return;
 }
 
-let name = localStorage.getItem("profileName") || "Anonymous";
+let userEmail = localStorage.getItem("profileEmail");
 let profileImage = localStorage.getItem("profileImage") || "";
 
 if(category === ""){
@@ -1052,17 +1334,25 @@ document.querySelector(".select-btn").style.borderColor="red";
 return;
 }
 
+let goal = parseInt(document.getElementById("postGoal").value);
+
+let name = localStorage.getItem("profileName") || "User";
+
 let post = {
 name,
+userEmail,
 profileImage,
 title,
 category,
 description,
-image,
+media,
+mediaType: mediaTypeSaved,
 likes:0,
 liked:false,
 comments:[],
 donations:0,
+goal: goal,
+completed: false,
 time: Date.now()
 };
 
@@ -1118,6 +1408,7 @@ document.getElementById("postTitle").value="";
 document.getElementById("postDescription").value="";
 document.getElementById("postCategory").value="";
 document.getElementById("selectedCategory").textContent="Select Category";
+document.getElementById("postGoal").value = "";
 
 if(previewElement){
 previewElement.src="";
@@ -1127,10 +1418,11 @@ previewElement.style.display="none";
 uploadText.style.display="block";
 removeBtn.style.display="none";
 
-if(imageInput){
-imageInput.value="";
-}
+let imageInput = document.getElementById("postMedia");
 
+if(mediaInput){
+    mediaInput.value = "";
+}
 closePost();
 
 }
@@ -1156,8 +1448,14 @@ return;
 
 posts.forEach((post,index)=>{
 
-if(currentCategory !== "All" && post.category !== currentCategory){
-return;
+/* COMPLETED FILTER */
+if(currentCategory === "Completed"){
+    if(!post.completed) return;
+}else{
+    if(post.completed) return;
+    if(currentCategory !== "All" && post.category !== currentCategory){
+        return;
+    }
 }
 
 
@@ -1169,9 +1467,30 @@ let profile = currentImage
 ? `<img src="${currentImage}" class="profile-avatar-small">`
 : `<div class="profile-avatar-small">${currentName.charAt(0)}</div>`;
 
-let imageHTML = post.image 
-? `<img src="${post.image}" class="post-image" onclick="openCommentModal(${index})">`
-: "";
+let mediaHTML = "";
+
+if(post.mediaType === "image"){
+    mediaHTML = `<img src="${post.media}" class="post-image" onclick="openCommentModal(${index})">`;
+}
+
+if(post.mediaType === "video"){
+    mediaHTML = `
+    <video class="post-video" onclick="openCommentModal(${index})">
+        <source src="${post.media}">
+    </video>
+    `;
+}
+
+let progress = post.goal ? Math.min((post.donations / post.goal) * 100, 100) : 0;
+
+let goalHTML = post.goal ? `
+<div class="donation-progress">
+    <div class="progress-bar">
+        <div class="progress-fill" style="width:${progress}%"></div>
+    </div>
+    <small>₱${post.donations} / ₱${post.goal}</small>
+</div>
+` : "";
 
 let postHTML = `
 <div class="post">
@@ -1186,7 +1505,9 @@ ${profile}
 </div>
 </div>
 
-<span class="tag ${post.category.replace(/[^a-z]/gi,'').toLowerCase()}">${post.category}</span>
+<span class="tag ${post.completed ? 'completed' : post.category.replace(/[^a-z]/gi,'').toLowerCase()}">
+${post.completed ? 'Completed' : post.category}
+</span>
 
 </div>
 
@@ -1194,7 +1515,8 @@ ${profile}
 
 <p>${post.description}</p>
 
-${imageHTML}
+${mediaHTML}
+${goalHTML}
 
 <div class="post-stats">
 
@@ -1206,6 +1528,7 @@ ${post.comments.length} comments
 
 </div>
 
+${post.completed ? "" : `
 <div class="post-actions">
 
 <button onclick="likePost(${index})" class="like-btn ${post.liked ? 'liked' : ''}">
@@ -1244,6 +1567,7 @@ ${post.comments.length} comments
 </div>
 
 </div>
+`}
 
 <div class="comment-section">
 
@@ -1395,18 +1719,27 @@ document.getElementById("postCategory").value = post.category;
 document.getElementById("selectedCategory").textContent = post.category;
 
 /* load image */
-if(post.image){
+if(post.media){
 
 let preview = document.getElementById("imagePreview");
 let uploadText = document.getElementById("uploadText");
 let removeBtn = document.getElementById("removeImageBtn");
 
-preview.src = post.image;
-preview.style.display = "block";
+if(post.mediaType === "image"){
+    preview.src = post.media;
+    preview.style.display = "block";
+    uploadText.style.display = "none";
+    removeBtn.style.display = "block";
+}
 
-uploadText.style.display = "none";
-removeBtn.style.display = "block";
-
+if(post.mediaType === "video"){
+    uploadBox.innerHTML = `
+    <video controls style="width:100%;border-radius:8px;">
+        <source src="${post.media}">
+    </video>
+    <button type="button" id="removeImageBtn" onclick="removeImage(event)">✕</button>
+    `;
+}
 }
 
 }
@@ -1446,10 +1779,20 @@ let profile = currentImage
 ? `<img src="${currentImage}" class="modal-avatar">`
 : `<div class="modal-avatar">${currentName.charAt(0)}</div>`;
 
-/* post image */
-let imageHTML = post.image
-? `<img src="${post.image}" class="modal-post-image" onclick="openImageViewer('${post.image}')">`
-: "";
+/* post media */
+let mediaHTML = "";
+
+if(post.mediaType === "image"){
+    mediaHTML = `<img src="${post.media}" class="modal-post-image" onclick="openImageViewer('${post.media}')">`;
+}
+
+if(post.mediaType === "video"){
+    mediaHTML = `
+    <video controls class="modal-post-video">
+        <source src="${post.media}">
+    </video>
+    `;
+}
 
 /* render comments */
 let commentsHTML = post.comments.map((c,i)=>{
@@ -1564,7 +1907,7 @@ ${post.category}
 
 <p>${post.description}</p>
 
-${imageHTML}
+${mediaHTML}
 
 <div class="post-stats">
 
@@ -1574,6 +1917,7 @@ ${imageHTML}
 
 </div>
 
+${post.completed ? "" : `
 <div class="post-actions">
 
 <button onclick="likePost(${index})" class="like-btn ${post.liked ? 'liked' : ''}">
@@ -1608,6 +1952,7 @@ ${imageHTML}
 </div>
 
 </div>
+`}
 
 <div class="comment-section">
 
@@ -1631,6 +1976,20 @@ document.getElementById("commentUserAvatar").innerHTML = avatarHTML;
 /* open modal */
 
 document.getElementById("commentModal").style.display="flex";
+
+if(post.completed){
+    let input = document.getElementById("modalCommentInput");
+    let btn = document.getElementById("sendCommentBtn");
+
+    if(input){
+        input.disabled = true;
+        input.placeholder = "This post is already completed";
+    }
+
+    if(btn){
+        btn.disabled = true;
+    }
+}
 
 lucide.createIcons();
 
@@ -2187,14 +2546,26 @@ document.body.classList.remove("no-scroll");
 
 function goPayment(){
 
-let amount = document.getElementById("donateAmount").value;
+let amount = parseInt(document.getElementById("donateAmount").value);
 
 if(!amount || amount <= 0){
-return;
+    alert("Enter a valid donation amount.");
+    return;
 }
 
-document.getElementById("donateModal").style.display = "none";
+let posts = JSON.parse(localStorage.getItem("posts")) || [];
+let post = posts[donatePostIndex];
 
+/* 🔥 CHECK REMAINING AMOUNT */
+let remaining = post.goal - post.donations;
+
+if(amount > remaining){
+    alert("Donation exceeds goal. Remaining amount is ₱" + remaining);
+    return;
+}
+
+/* proceed */
+document.getElementById("donateModal").style.display = "none";
 document.getElementById("paymentModal").style.display = "flex";
 
 }
@@ -2412,19 +2783,37 @@ let amount = parseInt(document.getElementById("donateAmount").value);
 
 let posts = JSON.parse(localStorage.getItem("posts")) || [];
 
-posts[donatePostIndex].donations += amount;
+let post = posts[donatePostIndex];
+
+/* 🔥 CALCULATE REMAINING */
+let remaining = post.goal - post.donations;
+
+/* ❌ BLOCK OVER-DONATION */
+if(amount > remaining){
+    alert("Donation exceeds remaining goal. Max allowed is ₱" + remaining);
+    return;
+}
+
+/* ✅ APPLY DONATION */
+post.donations += amount;
+
+/* ✅ CHECK IF GOAL REACHED EXACTLY */
+if(post.donations >= post.goal){
+    post.donations = post.goal;   // clamp to goal
+    post.completed = true;
+}
 
 /* track helped posts */
 if(!helpedPosts.includes(donatePostIndex)){
-helpedPosts.push(donatePostIndex);
-localStorage.setItem("helpedPosts", JSON.stringify(helpedPosts));
+    helpedPosts.push(donatePostIndex);
+    localStorage.setItem("helpedPosts", JSON.stringify(helpedPosts));
 }
 
 localStorage.setItem("posts", JSON.stringify(posts));
 
 updatePostsHelped();
-
 updateDonationTotal();
+updateReceivedTotal();
 
 /* close modals */
 document.getElementById("gcashModal").style.display="none";
@@ -2631,13 +3020,104 @@ inputs[index-1].focus();
 
 }
 
-setupBankOTPInputs();
+if(document.querySelector(".otp-input")){
+    setupBankOTPInputs();
+}
 
 function closeQR(){
 
 document.getElementById("qrModal").style.display = "none";
 document.body.classList.remove("no-scroll");
 
+}
+
+function verifySignupOTP(){
+
+let inputs = document.querySelectorAll(".signup-otp-input");
+
+let input = "";
+inputs.forEach(i => input += i.value);
+
+/* ❌ BLOCK EMPTY INPUT */
+if(input === ""){
+alert("Please enter the OTP.");
+return;
+}
+
+/* ❌ BLOCK EXPIRED OTP */
+if(signupOTP === ""){
+alert("OTP has expired. Please request a new one.");
+return;
+}
+
+/* ❌ BLOCK WRONG OTP */
+if(input !== signupOTP){
+alert("Invalid OTP");
+return;
+}
+
+/* ✅ SUCCESS */
+localStorage.setItem("userAccount", JSON.stringify(tempSignupUser));
+localStorage.setItem("profileEmail", tempSignupUser.email);
+localStorage.setItem("phone", tempSignupUser.phone);
+
+/* ✅ MARK AS VERIFIED */
+localStorage.setItem("phoneVerified", "true");
+localStorage.setItem("verifiedPhone", tempSignupUser.phone);
+
+alert("Account created successfully!");
+
+/* clear session */
+tempSignupUser = null;
+signupOTP = "";
+
+/* redirect */
+window.location.href = "index.html";
+}
+
+function setupSignupOTPInputs(){
+
+let inputs = document.querySelectorAll(".signup-otp-input");
+
+inputs.forEach((input, index) => {
+
+input.addEventListener("input", function(){
+
+this.value = this.value.replace(/[^0-9]/g,"");
+
+/* move to next box */
+if(this.value.length === 1 && index < inputs.length - 1){
+inputs[index + 1].focus();
+}
+
+/* ✅ AUTO VERIFY WHEN ALL FILLED */
+let otp = "";
+inputs.forEach(i => otp += i.value);
+
+if(otp.length === inputs.length){
+verifySignupOTP();
+}
+
+});
+
+input.addEventListener("keydown", function(e){
+
+/* backspace navigation */
+if(e.key === "Backspace" && this.value === "" && index > 0){
+inputs[index - 1].focus();
+}
+
+});
+
+});
+
+}
+
+function closeSignupOTP(){
+
+    document.getElementById("signupOtpModal").style.display = "none";
+
+    document.querySelectorAll(".signup-otp-input").forEach(i => i.value = "");
 }
 
 function logoutUser(){
@@ -2650,6 +3130,81 @@ if(!confirmLogout) return;
 
 /* redirect to login page */
 window.location.href = "index.html";
+
+}
+
+function startSignupOTPTimer(){
+
+clearInterval(signupOtpTimer);
+
+signupOtpSeconds = 60;
+
+let timer = document.getElementById("signupOtpTimer");
+
+signupOtpTimer = setInterval(function(){
+
+if(!timer) return;
+
+timer.textContent = "OTP expires in " + signupOtpSeconds + " seconds";
+
+signupOtpSeconds--;
+
+if(signupOtpSeconds < 0){
+
+clearInterval(signupOtpTimer);
+
+timer.textContent = "OTP expired. Click resend.";
+
+signupOTP = "";
+
+}
+
+},1000);
+
+}
+
+function resendSignupOTP(){
+
+/* block spam */
+if(signupOtpSeconds > 0 && signupOTP !== ""){
+alert("Please wait before requesting a new OTP.");
+return;
+}
+
+let phone = tempSignupUser.phone;
+
+/* generate new OTP */
+signupOTP = Math.floor(100000 + Math.random()*900000).toString();
+
+alert("New OTP sent to " + phone + "\nCode: " + signupOTP);
+
+/* restart timer */
+startSignupOTPTimer();
+
+/* clear input */
+document.querySelectorAll(".signup-otp-input").forEach(i => i.value = "");
+
+}
+
+function updateReceivedTotal(){
+
+    let posts = JSON.parse(localStorage.getItem("posts")) || [];
+
+    let totalReceived = 0;
+
+    let currentUser = localStorage.getItem("profileName");
+
+    posts.forEach(post=>{
+        if(post.name === currentUser){
+            totalReceived += post.donations || 0;
+        }
+    });
+
+    let receivedDisplay = document.getElementById("receivedTotal");
+
+    if(receivedDisplay){
+        receivedDisplay.textContent = "₱" + totalReceived.toLocaleString();
+    }
 
 }
 

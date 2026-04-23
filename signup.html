@@ -30,6 +30,14 @@
                 required
             >
 
+            <label>Phone Number</label>
+            <input 
+                type="tel" 
+                id="signupPhone" 
+                placeholder="09123456789" 
+                required
+            >
+            
             <label for="password">Password</label>
             <input
                 type="password"
@@ -61,6 +69,54 @@
     <p class="footer-text">
         ActLocal empowers communities to identify, report, and address local environmental and infrastructure issues.
     </p>
+
+    <!-- SIGNUP OTP MODAL -->
+    <div id="signupOtpModal" class="modern-modal">
+
+    <div class="modern-modal-box">
+
+    <h2>Verify Phone Number</h2>
+
+    <p>Enter the OTP sent to your phone</p>
+
+    <div class="otp-container">
+    <input type="text" maxlength="1" class="signup-otp-input">
+    <input type="text" maxlength="1" class="signup-otp-input">
+    <input type="text" maxlength="1" class="signup-otp-input">
+    <input type="text" maxlength="1" class="signup-otp-input">
+    <input type="text" maxlength="1" class="signup-otp-input">
+    <input type="text" maxlength="1" class="signup-otp-input">
+</div>
+
+<!-- ⏱ TIMER -->
+<p id="signupOtpTimer" style="text-align:center; margin-top:10px;">
+    OTP expires in 60 seconds
+</p>
+<!-- 🔁 RESEND -->
+<p style="text-align:center;">
+    Didn’t receive code? 
+    <span 
+        onclick="resendSignupOTP()" 
+        style="color:#007bff; cursor:pointer; font-weight:500;"
+    >
+        Resend
+    </span>
+</p>
+
+    
+
+    <div class="modern-actions">
+
+    <button class="btn-light" onclick="closeSignupOTP()">Cancel</button>
+
+    <button class="btn-primary" onclick="verifySignupOTP()">Verify</button>
+
+    </div>
+
+    </div>
+    </div>
+
+    
 
     <script src="./script.js"></script>
 
